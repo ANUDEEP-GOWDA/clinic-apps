@@ -57,7 +57,7 @@ export default async function CalendarPage({
     dayData = {
       schedules,
       overrides,
-      cards: cards.map((c) => ({
+      cards: cards.map((c:any) => ({
         id: c.id,
         slotDatetime: (c.slotDatetime as Date).toISOString(),
         durationMin: c.durationMin,
