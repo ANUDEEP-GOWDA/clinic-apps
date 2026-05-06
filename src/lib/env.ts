@@ -62,15 +62,34 @@ function optional(value: string | undefined): string | undefined {
 
 function loadEnv(): EnvSchema {
   const NODE_ENV = (process.env.NODE_ENV ?? 'development') as EnvSchema['NODE_ENV'];
+  
+  // 1. Detect if we are in the Build phase (Next.js or Railway)
+  const isBuildPhase = 
+    process.env.NEXT_PHASE === 'phase-production-build' || 
+    process.env.SKIP_ENV_VALIDATION === 'true' ||
+    process.env.CI === 'true';
 
   const STORAGE_DRIVER = (process.env.STORAGE_DRIVER ?? 'local') as EnvSchema['STORAGE_DRIVER'];
   if (STORAGE_DRIVER !== 'local' && STORAGE_DRIVER !== 's3') {
     throw new Error(`STORAGE_DRIVER must be 'local' or 's3', got '${STORAGE_DRIVER}'`);
   }
 
+  // 2. If building, return placeholders so the compiler doesn't crash
+  if (isBuildPhase) {
+    return {
+      DATABASE_URL: process.env.DATABASE_URL || 'postgresql://placeholder:5432/db',
+      SESSION_SECRET: process.env.SESSION_SECRET || 'placeholder_secret_32_chars_long_for_build',
+      APP_URL: process.env.APP_URL || 'http://localhost:3000',
+      NODE_ENV,
+      STORAGE_DRIVER,
+      STORAGE_LOCAL_DIR: process.env.STORAGE_LOCAL_DIR || './uploads',
+      CRON_SECRET: process.env.CRON_SECRET || 'placeholder_cron_16_chars',
+    } as EnvSchema;
+  }
+
+  // 3. Strict Validation for Runtime (The app will crash if these are missing in Prod)
   const env: EnvSchema = {
     DATABASE_URL: required('DATABASE_URL', process.env.DATABASE_URL),
-    // 32+ chars: iron-session refuses anything shorter.
     SESSION_SECRET: required('SESSION_SECRET', process.env.SESSION_SECRET, 32),
     APP_URL: required('APP_URL', process.env.APP_URL),
     NODE_ENV,
@@ -94,7 +113,6 @@ function loadEnv(): EnvSchema {
     SIGNUP_INVITE_CODE: optional(process.env.SIGNUP_INVITE_CODE),
   };
 
-  // Cross-field validation: if S3 driver, require the S3 fields.
   if (env.STORAGE_DRIVER === 's3') {
     const missing = [
       'STORAGE_S3_ENDPOINT',
@@ -103,14 +121,9 @@ function loadEnv(): EnvSchema {
       'STORAGE_S3_SECRET_ACCESS_KEY',
     ].filter((k) => !env[k as keyof EnvSchema]);
     if (missing.length > 0) {
-      throw new Error(
-        `STORAGE_DRIVER=s3 requires: ${missing.join(', ')}. See .env.example.`
-      );
+      throw new Error(`STORAGE_DRIVER=s3 requires: ${missing.join(', ')}`);
     }
   }
 
   return env;
 }
-
-// Loaded once at module init. Throws if invalid → app refuses to start.
-export const env = loadEnv();
