@@ -168,7 +168,7 @@ export const POST = handler<{ id: string }>(
       const plan = planStartConsultation(card);
       if (!plan.ok) return ctx.bad(plan.reason);
 
-      await ctx.tdb.transaction(async (tx) => {
+      await ctx.tdb.transaction(async (tx:any) => {
         await tx.card.update({ where: { id }, data: plan.patch });
         await tx.consultationDetails.create({ data: { cardId: id } });
         await tx.cardEvent.create({
