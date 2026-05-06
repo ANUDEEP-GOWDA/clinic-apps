@@ -100,7 +100,7 @@ export const POST = handler<{ id: string }>(
       const plan = planApprove(card, { newSlot });
       if (!plan.ok) return ctx.bad(plan.reason);
 
-      const updated = await ctx.tdb.transaction(async (tx) => {
+      const updated = await ctx.tdb.transaction(async (tx:any) => {
         const u = await tx.card.update({
           where: { id },
           data: plan.patch,
