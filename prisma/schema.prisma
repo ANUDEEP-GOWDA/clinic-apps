@@ -1,0 +1,518 @@
+// =============================================================================
+// Clinic SaaS — Prisma schema
+// =============================================================================
+//
+// Multi-tenant Postgres. Every tenant-owned table carries `clinicId` directly
+// (no transitive scoping), which lets us enforce isolation at TWO layers:
+//
+//   1. Application: lib/tenant-prisma.ts wraps Prisma so callers literally
+//      cannot query without clinicId — forgetting it becomes a type error.
+//   2. Database:   migrations/_rls.sql enables Postgres Row-Level Security.
+//      Even a forgotten WHERE clause cannot leak across tenants.
+//
+// Design principles:
+//
+//   - Append-only patient data (no DELETE on Patient, Card, CardEvent,
+//     ConsultationDetails). Use `active: false` to deactivate.
+//   - The Card state machine is sacred. See lib/cards/state-machine.ts.
+//   - Audit log uses Postgres JSONB so it stays queryable at scale.
+//   - OutboxJob is the durable queue (replaces ScheduledMessage).
+//     Survives the app going offline; workers drain it.
+//   - Indexes are per-clinic composite. At 30k tenants the planner needs
+//     them in this shape, not as global indexes.
+//
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// TENANT
+// =============================================================================
+
+model Clinic {
+  id        Int      @id @default(autoincrement())
+  slug      String   @unique
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users                   User[]
+  doctors                 Doctor[]
+  doctorSchedules         DoctorSchedule[]
+  doctorDayOverrides      DoctorDayOverride[]
+  services                Service[]
+  patients                Patient[]
+  cards                   Card[]
+  cardEvents              CardEvent[]
+  consultationDetails     ConsultationDetails[]
+  consultationAttachments ConsultationAttachment[]
+  callRequests            CallRequest[]
+  reviews                 Review[]
+  siteContent             SiteContent[]
+  media                   Media[]
+  outboxJobs              OutboxJob[]
+  whatsappMessages        WhatsappMessage[]
+  auditLogs               AuditLog[]
+  settings                Settings?
+
+  @@index([active])
+}
+
+// =============================================================================
+// AUTH
+// =============================================================================
+
+enum Role {
+  OWNER
+  DOCTOR
+  STAFF
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  clinicId     Int
+  clinic       Clinic    @relation(fields: [clinicId], references: [id])
+  name         String
+  email        String
+  passwordHash String
+  role         Role
+  active       Boolean   @default(true)
+
+  // MFA columns. Login flow currently password-only; turn on by setting
+  // mfaEnabled=true and walking the user through TOTP enrollment.
+  mfaEnabled       Boolean   @default(false)
+  mfaSecret        String?
+
+  lastLoginAt      DateTime?
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Email is unique per clinic (same person can be staff at two clinics).
+  @@unique([clinicId, email])
+  @@index([clinicId])
+}
+
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// =============================================================================
+// CLINIC SETTINGS (per-clinic, not global singleton)
+// =============================================================================
+
+model Settings {
+  id              Int      @id @default(autoincrement())
+  clinicId        Int      @unique
+  clinic          Clinic   @relation(fields: [clinicId], references: [id])
+
+  clinicName      String   @default("")
+  tagline         String   @default("")
+  about           String   @default("")
+  address         String   @default("")
+  phone           String   @default("")
+  email           String   @default("")
+  googlePlaceId   String   @default("")
+  googleMapsUrl   String   @default("")
+  latitude        Float?
+  longitude       Float?
+  timezone        String   @default("Asia/Kolkata")
+  workingHours    Json     @default("{}")
+  themeConfig     Json     @default("{}")
+  logoUrl         String   @default("")
+  faviconUrl      String   @default("")
+  heroImageUrl    String   @default("")
+  heroHeadline    String   @default("")
+  heroSubheadline String   @default("")
+  updatedAt       DateTime @updatedAt
+}
+
+// =============================================================================
+// DOCTORS & AVAILABILITY
+// =============================================================================
+
+model Doctor {
+  id                      Int      @id @default(autoincrement())
+  clinicId                Int
+  clinic                  Clinic   @relation(fields: [clinicId], references: [id])
+
+  name                    String
+  slug                    String
+  photoUrl                String   @default("")
+  qualifications          String   @default("")
+  bio                     String   @default("")
+  specialties             String   @default("")
+  yearsExperience         Int      @default(0)
+  consultationDurationMin Int      @default(15)
+  acceptingAppointments   Boolean  @default(true)
+  displayOrder            Int      @default(0)
+  active                  Boolean  @default(true)
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  schedules    DoctorSchedule[]
+  dayOverrides DoctorDayOverride[]
+  cards        Card[]
+
+  @@unique([clinicId, slug])
+  @@index([clinicId, active, acceptingAppointments])
+}
+
+model DoctorSchedule {
+  id        Int     @id @default(autoincrement())
+  clinicId  Int
+  clinic    Clinic  @relation(fields: [clinicId], references: [id])
+  doctorId  Int
+  doctor    Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  active    Boolean @default(true)
+
+  @@index([clinicId, doctorId])
+}
+
+model DoctorDayOverride {
+  id         Int      @id @default(autoincrement())
+  clinicId   Int
+  clinic     Clinic   @relation(fields: [clinicId], references: [id])
+  doctorId   Int
+  doctor     Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  date       DateTime
+  fullDayOff Boolean  @default(false)
+  blockStart String?
+  blockEnd   String?
+  reason     String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@index([clinicId, doctorId, date])
+}
+
+// =============================================================================
+// SERVICES
+// =============================================================================
+
+model Service {
+  id           Int     @id @default(autoincrement())
+  clinicId     Int
+  clinic       Clinic  @relation(fields: [clinicId], references: [id])
+
+  name         String
+  description  String  @default("")
+  icon         String  @default("")
+  durationMin  Int     @default(15)
+  displayOrder Int     @default(0)
+  active       Boolean @default(true)
+
+  cards Card[]
+
+  @@index([clinicId, active])
+}
+
+// =============================================================================
+// PATIENTS (append-only)
+// =============================================================================
+
+model Patient {
+  id        Int       @id @default(autoincrement())
+  clinicId  Int
+  clinic    Clinic    @relation(fields: [clinicId], references: [id])
+
+  name      String
+  phone     String
+  dob       DateTime?
+  gender    String?
+  notes     String    @default("")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  cards            Card[]
+  whatsappMessages WhatsappMessage[]
+
+  @@unique([clinicId, phone])
+  @@index([clinicId, name])
+}
+
+// =============================================================================
+// THE CARD — central state machine. DO NOT REDESIGN.
+// =============================================================================
+
+model Card {
+  id                   Int       @id @default(autoincrement())
+  clinicId             Int
+  clinic               Clinic    @relation(fields: [clinicId], references: [id])
+
+  // Opaque public id for reschedule/confirm links. Don't expose `id` in URLs.
+  publicId             String    @unique @default(cuid())
+
+  patientId            Int
+  patient              Patient   @relation(fields: [patientId], references: [id])
+  doctorId             Int
+  doctor               Doctor    @relation(fields: [doctorId], references: [id])
+  serviceId            Int?
+  service              Service?  @relation(fields: [serviceId], references: [id])
+
+  type                 String
+  state                String
+  appointmentType      String    @default("consultation")
+  reasonForVisit       String    @default("")
+
+  slotDatetime         DateTime?
+  durationMin          Int       @default(15)
+  originalSlotDatetime DateTime?
+
+  parentCardId Int?
+  parentCard   Card?  @relation("FollowUp", fields: [parentCardId], references: [id])
+  followUps    Card[] @relation("FollowUp")
+
+  actualStartAt      DateTime?
+  actualEndAt        DateTime?
+  patientConfirmedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events              CardEvent[]
+  consultationDetails ConsultationDetails?
+  attachments         ConsultationAttachment[]
+  outboxJobs          OutboxJob[]
+  whatsappMessages    WhatsappMessage[]
+
+  @@index([clinicId, doctorId, slotDatetime])
+  @@index([clinicId, patientId])
+  @@index([clinicId, type, state])
+  @@index([clinicId, slotDatetime])
+}
+
+model CardEvent {
+  id          Int      @id @default(autoincrement())
+  clinicId    Int
+  clinic      Clinic   @relation(fields: [clinicId], references: [id])
+  cardId      Int
+  card        Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  fromType    String?
+  toType      String?
+  fromState   String?
+  toState     String?
+  actorUserId Int?
+  payload     Json     @default("{}")
+  createdAt   DateTime @default(now())
+
+  @@index([clinicId, cardId])
+}
+
+model ConsultationDetails {
+  id          Int      @id @default(autoincrement())
+  clinicId    Int
+  clinic      Clinic   @relation(fields: [clinicId], references: [id])
+  cardId      Int      @unique
+  card        Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  notes       String   @default("")
+  sentMessage String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ConsultationAttachment {
+  id         Int      @id @default(autoincrement())
+  clinicId   Int
+  clinic     Clinic   @relation(fields: [clinicId], references: [id])
+  cardId     Int
+  card       Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  filename   String
+  storageKey String
+  mimeType   String
+  sizeBytes  Int
+  uploadedAt DateTime @default(now())
+
+  @@index([clinicId, cardId])
+}
+
+// =============================================================================
+// CALL REQUESTS / REVIEWS / SITE CONTENT / MEDIA
+// =============================================================================
+
+model CallRequest {
+  id            Int       @id @default(autoincrement())
+  clinicId      Int
+  clinic        Clinic    @relation(fields: [clinicId], references: [id])
+  name          String
+  phone         String
+  preferredTime String    @default("")
+  message       String    @default("")
+  state         String    @default("pending")
+  handledBy     Int?
+  handledAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([clinicId, state, createdAt])
+}
+
+model Review {
+  id             Int      @id @default(autoincrement())
+  clinicId       Int
+  clinic         Clinic   @relation(fields: [clinicId], references: [id])
+  source         String
+  author         String
+  rating         Int
+  text           String
+  reviewedAt     DateTime
+  googleReviewId String?
+  authorPhotoUrl String   @default("")
+  featured       Boolean  @default(false)
+  displayOrder   Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@unique([clinicId, googleReviewId])
+  @@index([clinicId, featured, displayOrder])
+}
+
+model SiteContent {
+  id        Int      @id @default(autoincrement())
+  clinicId  Int
+  clinic    Clinic   @relation(fields: [clinicId], references: [id])
+  key       String
+  value     Json     @default("{}")
+  updatedAt DateTime @updatedAt
+
+  @@unique([clinicId, key])
+}
+
+model Media {
+  id         Int      @id @default(autoincrement())
+  clinicId   Int
+  clinic     Clinic   @relation(fields: [clinicId], references: [id])
+  filename   String
+  storageKey String
+  mimeType   String
+  sizeBytes  Int
+  uploadedBy Int?
+  altText    String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@index([clinicId, createdAt])
+}
+
+// =============================================================================
+// OUTBOX — durable queue (replaces ScheduledMessage)
+// =============================================================================
+
+model OutboxJob {
+  id           Int       @id @default(autoincrement())
+  clinicId     Int
+  clinic       Clinic    @relation(fields: [clinicId], references: [id])
+
+  kind         String    // 'whatsapp_template' | 'email' | 'webhook'
+  status       String    @default("pending")
+                         // 'pending' | 'processing' | 'sent' | 'failed' | 'cancelled'
+  payload      Json      @default("{}")
+  scheduledAt  DateTime  @default(now())
+  attempts     Int       @default(0)
+  maxAttempts  Int       @default(5)
+  lastError    String    @default("")
+  lockedAt     DateTime?
+  lockedBy     String?
+  sentAt       DateTime?
+
+  cardId       Int?
+  card         Card?     @relation(fields: [cardId], references: [id])
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([status, scheduledAt])
+  @@index([clinicId, status])
+  @@index([clinicId, cardId])
+}
+
+// =============================================================================
+// WHATSAPP MESSAGE LOG
+// =============================================================================
+
+model WhatsappMessage {
+  id           Int      @id @default(autoincrement())
+  clinicId     Int
+  clinic       Clinic   @relation(fields: [clinicId], references: [id])
+  direction    String
+  patientId    Int?
+  patient      Patient? @relation(fields: [patientId], references: [id])
+  cardId       Int?
+  card         Card?    @relation(fields: [cardId], references: [id])
+  waMessageId  String?
+  templateName String?
+  body         String   @default("")
+  status       String   @default("")
+  rawPayload   Json     @default("{}")
+  createdAt    DateTime @default(now())
+
+  @@index([clinicId, patientId])
+  @@index([clinicId, cardId])
+  @@index([clinicId, createdAt])
+}
+
+// =============================================================================
+// AUDIT LOG
+// =============================================================================
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  clinicId   Int
+  clinic     Clinic   @relation(fields: [clinicId], references: [id])
+  userId     Int?
+  action     String
+  entityType String
+  entityId   Int?
+  payload    Json     @default("{}")
+  createdAt  DateTime @default(now())
+
+  @@index([clinicId, entityType, entityId])
+  @@index([clinicId, createdAt])
+  @@index([clinicId, userId, createdAt])
+}
+
+// =============================================================================
+// IDEMPOTENCY KEYS — prevents duplicate public-form submissions
+// =============================================================================
+
+model IdempotencyKey {
+  id           Int      @id @default(autoincrement())
+  key          String   @unique
+  scope        String
+  responseJson Json
+  createdAt    DateTime @default(now())
+
+  @@index([scope, createdAt])
+}
+
+// =============================================================================
+// CRON RUN LOG — observability for scheduled jobs
+// =============================================================================
+
+model CronRun {
+  id         Int       @id @default(autoincrement())
+  job        String
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  ok         Boolean?
+  details    Json      @default("{}")
+
+  @@index([job, startedAt])
+}

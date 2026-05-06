@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #2563eb;
+  --color-secondary: #10b981;
+  --color-accent: #f59e0b;
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+}
+
+html, body { height: 100%; }
+
+/* Smooth anchor scroll for the public single-page nav */
+html { scroll-behavior: smooth; }
+
+/* Print-friendly basics for the CMS card detail */
+@media print {
+  .no-print { display: none !important; }
+}
