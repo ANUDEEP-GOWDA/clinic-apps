@@ -57,7 +57,7 @@ export const POST = handler<{ id: string }>(
     }
 
     if (body.finalize && card.state === 'active') {
-      await ctx.tdb.transaction(async (tx) => {
+      await ctx.tdb.transaction(async (tx:any) => {
         await tx.card.update({
           where: { id },
           data: { state: 'completed', actualEndAt: new Date() },
