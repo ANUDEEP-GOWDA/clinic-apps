@@ -62,7 +62,7 @@ function ReviewCard({
       }`}
     >
       <div className="flex items-center gap-2 text-amber-500">
-        {Array.from({ length: review.rating }).map((_, i) => (
+        {Array.from({ length: review.rating }).map((_:any, i:any) => (
           <span key={i}>★</span>
         ))}
       </div>

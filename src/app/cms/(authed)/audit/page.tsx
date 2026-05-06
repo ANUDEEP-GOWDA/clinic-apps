@@ -45,7 +45,7 @@ export default async function AuditPage({
                 </td>
               </tr>
             ) : (
-              rows.map((r) => (
+              rows.map((r:any) => (
                 <tr key={r.id} className="border-t border-slate-100">
                   <td className="p-3 whitespace-nowrap">
                     {r.createdAt.toLocaleString()}

@@ -26,7 +26,7 @@ export default async function SeoPage() {
     ? `${settings.clinicName} — ${settings.tagline}`
     : settings?.clinicName ?? '';
   const firstAddress = settings?.address?.split(',')[0]?.trim() ?? '';
-  const svc = services.slice(0, 4).map((s) => s.name).join(', ');
+  const svc = services.slice(0, 4).map((s:any) => s.name).join(', ');
   const suggestedDesc =
     settings?.clinicName && (svc || firstAddress)
       ? `${settings.clinicName}${firstAddress ? ` in ${firstAddress}` : ''} — ${svc || 'professional medical care'}. Book online.`
@@ -34,7 +34,7 @@ export default async function SeoPage() {
   const suggestedKeywords = [
     settings?.clinicName,
     firstAddress,
-    ...services.map((s) => s.name),
+    ...services.map((s:any) => s.name),
   ].filter(Boolean).join(', ');
 
   return (

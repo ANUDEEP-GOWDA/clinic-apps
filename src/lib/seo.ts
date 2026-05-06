@@ -128,7 +128,7 @@ export function buildJsonLd(snap: PublicSnapshot): Record<string, unknown> {
       : { '@type': 'MedicalClinic', name: snap.settings.clinicName },
   }));
 
-  const reviews = snap.reviews.slice(0, 20).map((r) => ({
+  const reviews = snap.reviews.slice(0, 20).map((r:any) => ({
     '@type': 'Review',
     author: { '@type': 'Person', name: r.author },
     reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5 },
