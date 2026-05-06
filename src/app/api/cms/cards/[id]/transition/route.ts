@@ -191,7 +191,7 @@ export const POST = handler<{ id: string }>(
       const plan = planStateChange(card, body.stateTo);
       if (!plan.ok) return ctx.bad(plan.reason);
 
-      await ctx.tdb.transaction(async (tx) => {
+      await ctx.tdb.transaction(async (tx:any) => {
         await tx.card.update({ where: { id }, data: plan.patch });
         await tx.cardEvent.create({
           data: {

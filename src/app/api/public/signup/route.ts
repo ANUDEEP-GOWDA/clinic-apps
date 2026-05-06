@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     const passwordHash = await hashPassword(ownerPassword);
 
     // Create clinic + owner + default settings in one transaction.
-    const clinic = await prisma.$transaction(async (tx) => {
+    const clinic = await prisma.$transaction(async (tx:any) => {
       const c = await tx.clinic.create({
         data: { slug: clinicSlug, name: clinicName },
       });

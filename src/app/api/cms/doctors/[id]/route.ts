@@ -28,7 +28,7 @@ export const PATCH = handler<{ id: string }>(
     // half-applied replace can't happen.
     if (Array.isArray(body.schedules)) {
       const list = body.schedules as ScheduleInput[];
-      await ctx.tdb.transaction(async (tx) => {
+      await ctx.tdb.transaction(async (tx:any) => {
         await tx.doctorSchedule.deleteMany({ where: { doctorId: id } });
         if (list.length > 0) {
           await tx.doctorSchedule.createMany({

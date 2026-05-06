@@ -86,7 +86,7 @@ export function tenantPrisma(clinicId: number) {
     async transaction<T>(
       fn: (txdb: ReturnType<typeof tenantPrisma>) => Promise<T>
     ): Promise<T> {
-      return prisma.$transaction(async (tx) => {
+      return prisma.$transaction(async (tx:any) => {
         const txFacade = {} as Record<TenantModel, ScopedDelegate>;
         for (const model of TENANT_MODELS) {
           txFacade[model] = wrapDelegate(
