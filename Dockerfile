@@ -1,18 +1,17 @@
-# ---------- deps ----------
-FROM node:20-alpine AS deps
-# Install openssl for Prisma compatibility (Required for Alpine)
-RUN apk add --no-cache openssl
-WORKDIR /app
-COPY package.json package-lock.json* ./
-COPY prisma ./prisma
-RUN npm ci
-
 # ---------- build ----------
 FROM node:20-alpine AS builder
 RUN apk add --no-cache openssl
 WORKDIR /app
+
+# 1. Bring in the installed dependencies from the 'deps' stage
 COPY --from=deps /app/node_modules ./node_modules
+
+# 2. Copy EVERY file from your project root into the builder stage
+# This includes the 'public' folder, 'app' folder, and config files
 COPY . .
+
+# 3. Build the application
+RUN npm run build. .
 
 # Pass Railway variables into the build process to satisfy your env.ts validation
 ARG DATABASE_URL
