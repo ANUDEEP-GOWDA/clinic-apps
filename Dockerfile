@@ -1,10 +1,11 @@
 # ---------- 1. DEPS STAGE ----------
-# We separate this to cache your node_modules
 FROM node:20-alpine AS deps
 RUN apk add --no-cache openssl
 WORKDIR /app
+# Only copy files needed for install to maximize cache
 COPY package.json package-lock.json* ./
-COPY prisma ./prisma
+# We check if prisma directory exists before copying to prevent the crash
+COPY prisma ./prisma 
 RUN npm ci
 
 # ---------- 2. BUILD STAGE ----------
@@ -12,14 +13,10 @@ FROM node:20-alpine AS builder
 RUN apk add --no-cache openssl
 WORKDIR /app
 
-# A. Bring in deps from the previous stage
 COPY --from=deps /app/node_modules ./node_modules
-
-# B. Copy source code (This includes the 'public' folder)
 COPY . .
 
-# C. Set up Environment Variables BEFORE building
-# These must be defined before 'npm run build' runs
+# Environment variables for build-time validation (env.ts)
 ARG DATABASE_URL
 ARG APP_URL
 ARG SESSION_SECRET
@@ -33,7 +30,7 @@ ENV CRON_SECRET=$CRON_SECRET
 ENV SKIP_ENV_VALIDATION=$SKIP_ENV_VALIDATION
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# D. Generate Prisma and Build
+# Generate and Build
 RUN npx prisma generate
 RUN npm run build
 
@@ -47,15 +44,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 
-# Copy over the necessary build artifacts
-# Note: Next.js standalone mode puts the 'public' and 'static' files 
-# in specific places for the node server to find them.
+# Standard Standalone Layout
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-
-# Ensure Prisma engines are available for the migrations in the CMD
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 
@@ -64,5 +57,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Deploy migrations then start the server
 CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
