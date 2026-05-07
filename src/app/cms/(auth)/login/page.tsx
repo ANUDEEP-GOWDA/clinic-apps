@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 const ERRORS: Record<string, string> = {
@@ -11,7 +11,10 @@ const ERRORS: Record<string, string> = {
   invalid_request: 'Please fill all fields.',
 };
 
-export default function LoginPage() {
+/**
+ * 1. Component containing the logic that uses useSearchParams()
+ */
+function LoginForm() {
   const router = useRouter();
   const search = useSearchParams();
   const next = search.get('next') || '/cms/dashboard';
@@ -46,7 +49,6 @@ export default function LoginPage() {
         return;
       }
       if (j.requiresMfa) {
-        // TODO: navigate to /cms/mfa once that flow is wired.
         setError('Multi-factor auth not yet implemented for this account.');
         return;
       }
@@ -60,62 +62,77 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-      <form
-        onSubmit={submit}
-        className="w-full max-w-sm bg-white rounded-2xl border border-slate-100 shadow-sm p-6"
-      >
-        <h1 className="text-xl font-semibold">Sign in</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Sign in to manage your clinic.
-        </p>
-        <div className="mt-6 space-y-3">
-          <div>
-            <label className="block text-sm mb-1">Clinic slug</label>
-            <input
-              autoComplete="organization"
-              value={clinicSlug}
-              onChange={(e) => setClinicSlug(e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 px-3 py-2"
-              placeholder="your-clinic"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm mb-1">Email</label>
-            <input
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 px-3 py-2"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm mb-1">Password</label>
-            <input
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 px-3 py-2"
-              required
-            />
-          </div>
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full px-4 py-2 rounded-2xl text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50"
-          >
-            {busy ? 'Signing in…' : 'Sign in'}
-          </button>
+    <form
+      onSubmit={submit}
+      className="w-full max-w-sm bg-white rounded-2xl border border-slate-100 shadow-sm p-6"
+    >
+      <h1 className="text-xl font-semibold">Sign in</h1>
+      <p className="text-sm text-slate-500 mt-1">
+        Sign in to manage your clinic.
+      </p>
+      <div className="mt-6 space-y-3">
+        <div>
+          <label className="block text-sm mb-1">Clinic slug</label>
+          <input
+            autoComplete="organization"
+            value={clinicSlug}
+            onChange={(e) => setClinicSlug(e.target.value)}
+            className="w-full rounded-2xl border border-slate-200 px-3 py-2"
+            placeholder="your-clinic"
+            required
+          />
         </div>
-        <p className="mt-4 text-xs text-slate-500">
-          New here? <a href="/signup" className="underline">Create a clinic</a>.
-        </p>
-      </form>
+        <div>
+          <label className="block text-sm mb-1">Email</label>
+          <input
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-2xl border border-slate-200 px-3 py-2"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm mb-1">Password</label>
+          <input
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded-2xl border border-slate-200 px-3 py-2"
+            required
+          />
+        </div>
+        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        <button
+          type="submit"
+          disabled={busy}
+          className="w-full px-4 py-2 rounded-2xl text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50"
+        >
+          {busy ? 'Signing in…' : 'Sign in'}
+        </button>
+      </div>
+      <p className="mt-4 text-xs text-slate-500">
+        New here? <a href="/signup" className="underline">Create a clinic</a>.
+      </p>
+    </form>
+  );
+}
+
+/**
+ * 2. Main Page component wrapping the form in Suspense
+ */
+export default function LoginPage() {
+  return (
+    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+      <Suspense fallback={
+        <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-100 shadow-sm p-6 text-center">
+          <p className="text-slate-500">Loading...</p>
+        </div>
+      }>
+        <LoginForm />
+      </Suspense>
     </main>
   );
 }
