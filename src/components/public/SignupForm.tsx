@@ -5,14 +5,14 @@ import { useRouter } from 'next/navigation';
 
 const ERROR_MESSAGES: Record<string, string> = {
   clinic_name_required: 'Clinic name is required.',
-  invalid_slug:
-    'Slug must be lowercase letters, numbers, and dashes (3–32 chars), starting and ending with a letter or number.',
-  reserved_slug: 'That slug is reserved. Pick another.',
-  slug_taken: 'That slug is already taken.',
   owner_name_required: 'Your name is required.',
   invalid_email: 'Please enter a valid email.',
-  password_too_short: 'Password must be at least 10 characters.',
+  email_taken: 'An account with this email already exists.',
+  password_too_short: 'Password must be at least 8 characters.',
   password_too_long: 'Password is too long.',
+  password_no_uppercase: 'Password must include at least one uppercase letter.',
+  password_no_number: 'Password must include at least one number.',
+  password_too_common: 'Password is too common. Choose something less guessable.',
   invalid_invite: 'Invalid invite code.',
   rate_limited: 'Too many attempts. Please wait a minute.',
 };
@@ -20,30 +20,22 @@ const ERROR_MESSAGES: Record<string, string> = {
 export default function SignupForm() {
   const router = useRouter();
   const [clinicName, setClinicName] = useState('');
-  const [clinicSlug, setClinicSlug] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
   const [ownerPassword, setOwnerPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Auto-suggest slug from clinic name
-  function onClinicNameChange(v: string) {
-    setClinicName(v);
-    if (!clinicSlug) {
-      const auto = v
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 32);
-      setClinicSlug(auto);
-    }
-  }
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (ownerPassword !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
     setSubmitting(true);
     try {
       const idem = (() => {
@@ -51,13 +43,9 @@ export default function SignupForm() {
       })();
       const res = await fetch('/api/public/signup', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Idempotency-Key': idem,
-        },
+        headers: { 'Content-Type': 'application/json', 'X-Idempotency-Key': idem },
         body: JSON.stringify({
           clinicName: clinicName.trim(),
-          clinicSlug: clinicSlug.trim().toLowerCase(),
           ownerName: ownerName.trim(),
           ownerEmail: ownerEmail.trim().toLowerCase(),
           ownerPassword,
@@ -80,69 +68,44 @@ export default function SignupForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <Field label="Clinic name">
-        <input
-          required
-          value={clinicName}
-          onChange={(e) => onClinicNameChange(e.target.value)}
-          className="input"
-          placeholder="e.g. Sunshine Family Clinic"
-        />
-      </Field>
-
-      <Field
-        label="Clinic URL slug"
-        hint="Used in your public URL: yourdomain.com/c/your-slug"
-      >
-        <input
-          required
-          value={clinicSlug}
-          onChange={(e) => setClinicSlug(e.target.value)}
-          className="input"
-          placeholder="sunshine-family"
-          pattern="^[a-z0-9](?:[a-z0-9-]{1,30}[a-z0-9])?$"
-        />
+        <input required value={clinicName} onChange={(e) => setClinicName(e.target.value)}
+          className="input" placeholder="e.g. Sunshine Family Clinic" />
       </Field>
 
       <hr className="border-slate-200 my-2" />
 
       <Field label="Your name">
-        <input
-          required
-          value={ownerName}
-          onChange={(e) => setOwnerName(e.target.value)}
-          className="input"
-        />
+        <input required value={ownerName} onChange={(e) => setOwnerName(e.target.value)}
+          className="input" />
       </Field>
 
       <Field label="Email">
-        <input
-          required
-          type="email"
-          value={ownerEmail}
+        <input required type="email" value={ownerEmail}
           onChange={(e) => setOwnerEmail(e.target.value)}
-          className="input"
-          autoComplete="email"
-        />
+          className="input" autoComplete="email" />
       </Field>
 
-      <Field label="Password" hint="At least 10 characters.">
-        <input
-          required
-          type="password"
-          value={ownerPassword}
-          onChange={(e) => setOwnerPassword(e.target.value)}
-          className="input"
-          minLength={10}
-          autoComplete="new-password"
-        />
+      <Field label="Password" hint="At least 8 characters, one uppercase letter, one number.">
+        <div className="relative">
+          <input required type={showPassword ? 'text' : 'password'}
+            value={ownerPassword} onChange={(e) => setOwnerPassword(e.target.value)}
+            className="input pr-12" minLength={8} autoComplete="new-password" />
+          <button type="button"
+            onClick={() => setShowPassword((s) => !s)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 hover:text-slate-700">
+            {showPassword ? 'Hide' : 'Show'}
+          </button>
+        </div>
+      </Field>
+
+      <Field label="Confirm password">
+        <input required type={showPassword ? 'text' : 'password'}
+          value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+          className="input" minLength={8} autoComplete="new-password" />
       </Field>
 
       <Field label="Invite code" hint="Leave blank if you weren't given one.">
-        <input
-          value={inviteCode}
-          onChange={(e) => setInviteCode(e.target.value)}
-          className="input"
-        />
+        <input value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} className="input" />
       </Field>
 
       {error && (
@@ -151,11 +114,8 @@ export default function SignupForm() {
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="w-full rounded-lg bg-slate-900 text-white font-medium py-3 hover:bg-slate-800 disabled:opacity-50"
-      >
+      <button type="submit" disabled={submitting}
+        className="w-full rounded-lg bg-slate-900 text-white font-medium py-3 hover:bg-slate-800 disabled:opacity-50">
         {submitting ? 'Creating…' : 'Create clinic'}
       </button>
 
@@ -177,15 +137,7 @@ export default function SignupForm() {
   );
 }
 
-function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
       <div className="text-sm font-medium text-slate-700">{label}</div>

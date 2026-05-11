@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { hashPassword, validatePassword } from '@/lib/auth';
+import { hashPassword } from '@/lib/auth';
+import { validatePassword } from '@/lib/password-policy';
 import { check, clientKey } from '@/lib/rate-limit';
 import { withIdempotency } from '@/lib/idempotency';
 import { env } from '@/lib/env';
@@ -12,33 +13,47 @@ export const dynamic = 'force-dynamic';
 
 type Body = {
   clinicName?: string;
-  clinicSlug?: string;
   ownerName?: string;
   ownerEmail?: string;
   ownerPassword?: string;
   inviteCode?: string;
 };
 
-const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{1,30}[a-z0-9])?$/;
 const RESERVED_SLUGS = new Set([
-  'cms', 'api', 'app', 'admin', 'login', 'signup',
-  'dashboard', 'static', 'public', '_next',
+  'cms', 'api', 'app', 'admin', 'login', 'signup', 'public',
+  'dashboard', 'static', '_next', 'c',
 ]);
 
-/**
- * POST /api/public/signup
- *
- * Creates a new Clinic + the first OWNER user. This is the SaaS front door.
- *
- * Body: { clinicName, clinicSlug, ownerName, ownerEmail, ownerPassword,
- *         inviteCode? }
- *
- * If SIGNUP_INVITE_CODE env var is set, the request must include a matching
- * inviteCode. Useful for closed beta. Leave the env unset for open signup.
- *
- * On success, sets a session for the new owner and returns the clinic slug
- * so the client redirects into /cms.
- */
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 30) || 'clinic';
+}
+
+async function uniqueSlug(base: string): Promise<string> {
+  let candidate = base;
+  let n = 0;
+  while (true) {
+    if (!RESERVED_SLUGS.has(candidate)) {
+      const existing = await prisma.clinic.findUnique({
+        where: { slug: candidate },
+      });
+      if (!existing) return candidate;
+    }
+    n++;
+    const suffix = Math.random().toString(36).slice(2, 6);
+    candidate = `${base}-${suffix}`.slice(0, 32);
+    if (n > 10) {
+      candidate = `clinic-${Date.now().toString(36)}`;
+      break;
+    }
+  }
+  return candidate;
+}
+
 export async function POST(req: NextRequest) {
   if (!check(clientKey(req, 'signup'), { capacity: 4, refillPerMinute: 1 })) {
     return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
@@ -51,24 +66,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
-  // Invite code gate (closed beta).
   if (env.SIGNUP_INVITE_CODE && body.inviteCode !== env.SIGNUP_INVITE_CODE) {
     return NextResponse.json({ error: 'invalid_invite' }, { status: 403 });
   }
 
   const clinicName = (body.clinicName ?? '').trim();
-  const clinicSlug = (body.clinicSlug ?? '').trim().toLowerCase();
   const ownerName = (body.ownerName ?? '').trim();
   const ownerEmail = (body.ownerEmail ?? '').trim().toLowerCase();
   const ownerPassword = body.ownerPassword ?? '';
 
   if (!clinicName) return NextResponse.json({ error: 'clinic_name_required' }, { status: 400 });
-  if (!SLUG_RE.test(clinicSlug)) {
-    return NextResponse.json({ error: 'invalid_slug' }, { status: 400 });
-  }
-  if (RESERVED_SLUGS.has(clinicSlug)) {
-    return NextResponse.json({ error: 'reserved_slug' }, { status: 400 });
-  }
   if (!ownerName) return NextResponse.json({ error: 'owner_name_required' }, { status: 400 });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail)) {
     return NextResponse.json({ error: 'invalid_email' }, { status: 400 });
@@ -77,18 +84,15 @@ export async function POST(req: NextRequest) {
   if (pwErr) return NextResponse.json({ error: pwErr }, { status: 400 });
 
   const { result } = await withIdempotency(req, 'signup', async () => {
-    // Slug uniqueness is enforced by the DB unique constraint, but check
-    // first to give a clean error.
-    const existing = await prisma.clinic.findUnique({ where: { slug: clinicSlug } });
-    if (existing) return { ok: false as const, error: 'slug_taken' };
+    // Email is globally unique now.
+    const existingUser = await prisma.user.findUnique({ where: { email: ownerEmail } });
+    if (existingUser) return { ok: false as const, error: 'email_taken' };
 
+    const slug = await uniqueSlug(slugify(clinicName));
     const passwordHash = await hashPassword(ownerPassword);
 
-    // Create clinic + owner + default settings in one transaction.
-    const clinic = await prisma.$transaction(async (tx:any) => {
-      const c = await tx.clinic.create({
-        data: { slug: clinicSlug, name: clinicName },
-      });
+    const clinic = await prisma.$transaction(async (tx) => {
+      const c = await tx.clinic.create({ data: { slug, name: clinicName } });
       await tx.user.create({
         data: {
           clinicId: c.id,
@@ -98,12 +102,7 @@ export async function POST(req: NextRequest) {
           role: Role.OWNER,
         },
       });
-      await tx.settings.create({
-        data: {
-          clinicId: c.id,
-          clinicName,
-        },
-      });
+      await tx.settings.create({ data: { clinicId: c.id, clinicName } });
       await tx.auditLog.create({
         data: {
           clinicId: c.id,
@@ -124,7 +123,7 @@ export async function POST(req: NextRequest) {
   }
   return NextResponse.json({
     ok: true,
-    clinicSlug: result.clinicSlug,
-    loginAt: `/cms/login?clinic=${encodeURIComponent(result.clinicSlug)}`,
+    publicSiteUrl: `/c/${result.clinicSlug}`,
+    loginAt: '/cms/login',
   });
 }

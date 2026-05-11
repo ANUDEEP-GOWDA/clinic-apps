@@ -38,12 +38,13 @@ datasource db {
 // =============================================================================
 
 model Clinic {
-  id        Int      @id @default(autoincrement())
-  slug      String   @unique
-  name      String
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  slug         String   @unique     // internal id; never shown to users now
+  name         String
+  customDomain String?  @unique     // e.g. "lifecareclinic.in" - set by clinic owner
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   users                   User[]
   doctors                 Doctor[]
@@ -65,7 +66,9 @@ model Clinic {
   settings                Settings?
 
   @@index([active])
+  @@index([customDomain])
 }
+
 
 // =============================================================================
 // AUTH
@@ -100,7 +103,7 @@ model User {
   updatedAt    DateTime  @updatedAt
 
   // Email is unique per clinic (same person can be staff at two clinics).
-  @@unique([clinicId, email])
+  email  String @unique
   @@index([clinicId])
 }
 
