@@ -21,6 +21,7 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.example
 
 # Local file storage (dev driver writes here)
 uploads/
