@@ -85,7 +85,6 @@ model User {
   clinicId     Int
   clinic       Clinic    @relation(fields: [clinicId], references: [id])
   name         String
-  email        String
   passwordHash String
   role         Role
   active       Boolean   @default(true)
