@@ -19,12 +19,14 @@ type Initial = {
   latitude: number | null;
   longitude: number | null;
   timezone: string;
-  workingHours: string; // JSON
+  workingHours: string;
   logoUrl: string;
   faviconUrl: string;
   heroImageUrl: string;
   heroHeadline: string;
   heroSubheadline: string;
+  customDomain: string | null;
+  clinicSlug: string;
 };
 
 const DAY_LABELS: Record<DayKey, string> = {
@@ -36,8 +38,12 @@ export default function SettingsEditor({ initial }: { initial: Initial }) {
   const router = useRouter();
   const [s, setS] = useState<Initial>(initial);
   const [wh, setWh] = useState(parseWorkingHours(initial.workingHours));
+  const [domain, setDomain] = useState(initial.customDomain ?? '');
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [domainStatus, setDomainStatus] = useState<
+    null | { state: 'checking' | 'ok' | 'misconfigured' | 'unset'; detail?: string }
+  >(null);
 
   function set<K extends keyof Initial>(k: K, v: Initial[K]) {
     setS((p) => ({ ...p, [k]: v }));
@@ -53,20 +59,42 @@ export default function SettingsEditor({ initial }: { initial: Initial }) {
     setWh((prev) => ({ ...prev, [d]: prev[d].filter((_, j) => j !== i) }));
   }
 
+  async function checkDomain() {
+    const d = domain.trim().toLowerCase();
+    if (!d) { setDomainStatus({ state: 'unset' }); return; }
+    setDomainStatus({ state: 'checking' });
+    try {
+      const r = await fetch(`/api/cms/settings/check-domain?d=${encodeURIComponent(d)}`);
+      const j = (await r.json()) as { ok?: boolean; detail?: string };
+      setDomainStatus({
+        state: j.ok ? 'ok' : 'misconfigured',
+        detail: j.detail,
+      });
+    } catch {
+      setDomainStatus({ state: 'misconfigured', detail: 'Could not check. Try again.' });
+    }
+  }
+
   async function save() {
-    setBusy(true);
-    setStatus(null);
+    setBusy(true); setStatus(null);
     try {
       const res = await fetch('/api/cms/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...s, workingHours: stringifyWorkingHours(wh) }),
+        body: JSON.stringify({
+          ...s,
+          workingHours: stringifyWorkingHours(wh),
+          customDomain: domain.trim().toLowerCase() || null,
+        }),
       });
-      if (res.ok) {
+      const j = (await res.json()) as { ok?: boolean; error?: string };
+      if (res.ok && j.ok !== false) {
         setStatus('Saved.');
         router.refresh();
       } else {
-        setStatus('Save failed.');
+        setStatus(j.error === 'domain_taken' ? 'That domain is already used by another clinic.' :
+                  j.error === 'invalid_domain' ? 'Domain looks invalid. Use format: example.com' :
+                  'Save failed.');
       }
     } catch {
       setStatus('Network error.');
@@ -75,8 +103,59 @@ export default function SettingsEditor({ initial }: { initial: Initial }) {
     }
   }
 
+  const slugUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/c/${initial.clinicSlug}`
+    : `/c/${initial.clinicSlug}`;
+
   return (
     <div className="space-y-6 max-w-3xl">
+      <Section title="Public Website">
+        <div className="space-y-3">
+          <div className="text-sm text-slate-700">
+            Your public website is always available at:
+            <div className="mt-1">
+              <a href={slugUrl} target="_blank" rel="noopener noreferrer"
+                className="text-emerald-700 underline break-all">{slugUrl}</a>
+            </div>
+          </div>
+
+          <hr className="border-slate-100" />
+
+          <Field label="Custom domain (optional)">
+            <div className="flex gap-2">
+              <input
+                className="input flex-1"
+                placeholder="e.g. myclinic.com"
+                value={domain}
+                onChange={(e) => { setDomain(e.target.value); setDomainStatus(null); }}
+              />
+              <button type="button" onClick={checkDomain}
+                className="px-3 py-2 rounded-xl border border-slate-200 text-sm hover:bg-slate-50">
+                Check DNS
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 mt-2">
+              Point a CNAME at <code className="bg-slate-100 px-1 rounded">cname.railway.app</code> from
+              your DNS provider. Also add the domain in Railway → Settings → Networking → Custom Domain.
+            </p>
+          </Field>
+
+          {domainStatus && (
+            <div className={`text-sm rounded-lg p-3 ${
+              domainStatus.state === 'ok' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
+              domainStatus.state === 'checking' ? 'bg-slate-50 text-slate-600' :
+              domainStatus.state === 'unset' ? 'bg-slate-50 text-slate-600' :
+              'bg-amber-50 text-amber-800 border border-amber-200'
+            }`}>
+              {domainStatus.state === 'checking' && 'Checking DNS…'}
+              {domainStatus.state === 'ok' && `✓ DNS looks correct${domainStatus.detail ? ` (${domainStatus.detail})` : ''}. After saving, visiting your domain will show this clinic's public site.`}
+              {domainStatus.state === 'misconfigured' && `⚠ ${domainStatus.detail || 'DNS is not pointing at this app yet. Update your CNAME and try again in a few minutes.'}`}
+              {domainStatus.state === 'unset' && 'No domain entered.'}
+            </div>
+          )}
+        </div>
+      </Section>
+
       <Section title="Clinic">
         <div className="grid sm:grid-cols-2 gap-3">
           <Field label="Clinic name"><input className="input" value={s.clinicName} onChange={(e) => set('clinicName', e.target.value)} /></Field>
@@ -120,54 +199,30 @@ export default function SettingsEditor({ initial }: { initial: Initial }) {
               ) : (
                 wh[d].map((w, i) => (
                   <div key={i} className="flex items-center gap-1">
-                    <input
-                      type="time"
-                      value={w.start}
+                    <input type="time" value={w.start}
                       onChange={(e) => updateWindow(d, i, { ...w, start: e.target.value })}
-                      className="input w-auto"
-                    />
+                      className="input w-auto" />
                     <span>–</span>
-                    <input
-                      type="time"
-                      value={w.end}
+                    <input type="time" value={w.end}
                       onChange={(e) => updateWindow(d, i, { ...w, end: e.target.value })}
-                      className="input w-auto"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeWindow(d, i)}
-                      className="text-xs text-red-600 hover:underline ml-1"
-                    >
-                      remove
-                    </button>
+                      className="input w-auto" />
+                    <button type="button" onClick={() => removeWindow(d, i)}
+                      className="text-xs text-red-600 hover:underline ml-1">remove</button>
                   </div>
                 ))
               )}
-              <button
-                type="button"
-                onClick={() => addWindow(d)}
-                className="text-xs text-[var(--color-primary)] hover:underline"
-              >
-                + add window
-              </button>
+              <button type="button" onClick={() => addWindow(d)}
+                className="text-xs text-[var(--color-primary)] hover:underline">+ add window</button>
             </div>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={() => setWh(EMPTY_WORKING_HOURS)}
-          className="mt-3 text-xs text-slate-500 hover:underline"
-        >
-          Clear all
-        </button>
+        <button type="button" onClick={() => setWh(EMPTY_WORKING_HOURS)}
+          className="mt-3 text-xs text-slate-500 hover:underline">Clear all</button>
       </Section>
 
       <div className="flex items-center gap-3">
-        <button
-          disabled={busy}
-          onClick={save}
-          className="px-4 py-2 rounded-xl bg-[var(--color-primary)] text-white text-sm disabled:opacity-50"
-        >
+        <button disabled={busy} onClick={save}
+          className="px-4 py-2 rounded-xl bg-[var(--color-primary)] text-white text-sm disabled:opacity-50">
           {busy ? 'Saving…' : 'Save'}
         </button>
         {status ? <span className="text-sm text-slate-600">{status}</span> : null}

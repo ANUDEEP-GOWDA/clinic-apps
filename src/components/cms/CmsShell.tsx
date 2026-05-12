@@ -7,6 +7,8 @@ import AtsBadge from './AtsBadge';
 
 type Props = {
   user: { name: string; email: string; role: string };
+  clinicSlug: string;
+  customDomain: string | null;
   children: React.ReactNode;
 };
 
@@ -24,7 +26,7 @@ const NAV: Array<{ href: string; label: string }> = [
   { href: '/cms/backup', label: 'Backup' },
 ];
 
-export default function CmsShell({ user, children }: Props) {
+export default function CmsShell({ user, clinicSlug, customDomain, children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -33,6 +35,10 @@ export default function CmsShell({ user, children }: Props) {
     router.push('/cms/login');
     router.refresh();
   }
+
+  // Use the slug URL for the in-app preview (always works, no DNS needed).
+  // Domain confirmation lives in Settings.
+  const publicSiteUrl = `/c/${clinicSlug}`;
 
   return (
     <div className="min-h-screen flex bg-slate-50">
@@ -67,6 +73,18 @@ export default function CmsShell({ user, children }: Props) {
         <header className="h-14 bg-white border-b border-slate-100 flex items-center px-4 gap-4">
           <PatientSearchBar />
           <div className="ml-auto flex items-center gap-3">
+            {clinicSlug ? (
+              <a
+                href={publicSiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 flex items-center gap-1.5"
+                title={customDomain ? `Custom domain set: ${customDomain}` : 'View your public website'}
+              >
+                <span>View Public Site</span>
+                <span className="text-xs">↗</span>
+              </a>
+            ) : null}
             <div className="text-sm">
               <div className="font-medium leading-tight">{user.name || user.email}</div>
               <div className="text-xs text-slate-500 leading-tight">{user.role}</div>
@@ -85,7 +103,6 @@ export default function CmsShell({ user, children }: Props) {
   );
 }
 
-// Inline patient search — debounced fetch, dropdown of matches
 function PatientSearchBar() {
   const [q, setQ] = useState('');
   const [items, setItems] = useState<Array<{ id: number; name: string; phone: string }>>([]);
@@ -94,17 +111,12 @@ function PatientSearchBar() {
 
   useEffect(() => {
     const t = setTimeout(async () => {
-      if (q.trim().length < 2) {
-        setItems([]);
-        return;
-      }
+      if (q.trim().length < 2) { setItems([]); return; }
       try {
         const r = await fetch(`/api/cms/patients/search?q=${encodeURIComponent(q.trim())}`);
         const j = (await r.json()) as { items?: typeof items };
         setItems(j.items ?? []);
-      } catch {
-        setItems([]);
-      }
+      } catch { setItems([]); }
     }, 200);
     return () => clearTimeout(t);
   }, [q]);
@@ -121,10 +133,7 @@ function PatientSearchBar() {
     <div ref={ref} className="relative w-full max-w-md">
       <input
         value={q}
-        onChange={(e) => {
-          setQ(e.target.value);
-          setOpen(true);
-        }}
+        onChange={(e) => { setQ(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         placeholder="Search patients (name or phone)…"
         className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"

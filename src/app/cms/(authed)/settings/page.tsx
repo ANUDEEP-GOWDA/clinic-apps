@@ -4,8 +4,15 @@ import SettingsEditor from '@/components/cms/SettingsEditor';
 export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
-  const { tdb } = await ssrTenant();
-  const s = await tdb.settings.findFirst();
+  const { tdb, session } = await ssrTenant();
+  const [s, clinic] = await Promise.all([
+    tdb.settings.findFirst(),
+    tdb.raw.clinic.findUnique({
+      where: { id: session.clinicId },
+      select: { slug: true, customDomain: true },
+    }),
+  ]);
+
   return (
     <div>
       <h1 className="text-xl font-semibold mb-4">Settings</h1>
@@ -33,6 +40,8 @@ export default async function SettingsPage() {
           heroImageUrl: s?.heroImageUrl ?? '',
           heroHeadline: s?.heroHeadline ?? '',
           heroSubheadline: s?.heroSubheadline ?? '',
+          customDomain: clinic?.customDomain ?? null,
+          clinicSlug: clinic?.slug ?? '',
         }}
       />
     </div>
