@@ -101,7 +101,7 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  // Email is unique per clinic (same person can be staff at two clinics).
+  // Email is globally unique — login lookup uses email alone (no clinic context).
   email  String @unique
   @@index([clinicId])
 }

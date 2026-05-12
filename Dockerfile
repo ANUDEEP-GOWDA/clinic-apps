@@ -1,4 +1,4 @@
-# ---------- 1. DEPS STAGE ----------
+.env.example# ---------- 1. DEPS STAGE ----------
 FROM node:20-alpine AS deps
 RUN apk add --no-cache openssl
 WORKDIR /app
