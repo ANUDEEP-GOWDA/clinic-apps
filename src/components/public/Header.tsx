@@ -39,20 +39,20 @@ export default function Header({ snap }: { snap: PublicSnapshot }) {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
-          {phone ? (
-            <a
-              href={`tel:${phone}`}
-              className="px-3 py-2 rounded-2xl border border-slate-200 text-sm hover:bg-slate-50"
-            >
-              Call Now
-            </a>
-          ) : null}
           <Link
             href={`/c/${snap.clinic.slug}/book`}
-            className="px-4 py-2 rounded-2xl text-sm text-white bg-[var(--color-primary)] hover:opacity-90"
+            className="px-3 py-2 rounded-2xl text-sm border border-slate-200 hover:bg-slate-50"
           >
             Book Appointment
           </Link>
+          {phone ? (
+            <a
+              href={`tel:${phone}`}
+              className="px-4 py-2 rounded-2xl text-sm text-white bg-[var(--color-primary)] hover:opacity-90 font-medium"
+            >
+              📞 Call Now
+            </a>
+          ) : null}
         </div>
 
         <button
@@ -96,14 +96,14 @@ export default function Header({ snap }: { snap: PublicSnapshot }) {
               {phone ? (
                 <a
                   href={`tel:${phone}`}
-                  className="px-4 py-2 rounded-2xl border border-slate-200 text-center"
+                  className="px-4 py-3 rounded-2xl text-white bg-[var(--color-primary)] text-center font-semibold"
                 >
-                  Call Now
+                  📞 Call Now
                 </a>
               ) : null}
               <Link
                 href={`/c/${snap.clinic.slug}/book`}
-                className="px-4 py-2 rounded-2xl text-white bg-[var(--color-primary)] text-center"
+                className="px-4 py-2 rounded-2xl border border-slate-200 text-center text-sm"
               >
                 Book Appointment
               </Link>

@@ -11,12 +11,12 @@ export default function About({ snap }: { snap: PublicSnapshot }) {
 
   return (
     <section id="about" className="py-16 md:py-20">
-      <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
-        <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100">
-          {aboutImg ? (
+      <div className={`max-w-6xl mx-auto px-4 ${aboutImg ? 'grid md:grid-cols-2 gap-10 items-center' : 'max-w-3xl'}`}>
+        {aboutImg ? (
+          <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100">
             <Image src={aboutImg} alt="About the clinic" fill sizes="50vw" className="object-cover" />
-          ) : null}
-        </div>
+          </div>
+        ) : null}
         <div>
           <h2 className="text-2xl md:text-3xl font-bold">About Us</h2>
           {paragraphs.map((p, i) => (

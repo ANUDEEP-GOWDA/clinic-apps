@@ -20,8 +20,10 @@ export default async function HomePage({
   const snap = await getPublicSnapshot(params.clinicSlug);
   if (!snap) notFound();
 
+  const phone = snap.settings.phone;
+
   return (
-    <main>
+    <main className={phone ? 'pb-16 md:pb-0' : ''}>
       <Header snap={snap} />
       <Hero snap={snap} />
       <Services snap={snap} />
@@ -31,6 +33,17 @@ export default async function HomePage({
       <Reviews snap={snap} />
       <Location snap={snap} />
       <Footer snap={snap} />
+
+      {phone ? (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 p-3 bg-white border-t border-slate-200 shadow-lg">
+          <a
+            href={`tel:${phone}`}
+            className="block w-full py-3 rounded-2xl text-white bg-[var(--color-primary)] text-center font-semibold text-base"
+          >
+            📞 Call Now — {phone}
+          </a>
+        </div>
+      ) : null}
     </main>
   );
 }

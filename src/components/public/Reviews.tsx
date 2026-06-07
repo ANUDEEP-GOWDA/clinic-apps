@@ -29,7 +29,7 @@ export default function Reviews({ snap }: { snap: PublicSnapshot }) {
         </div>
 
         {featured.length > 0 ? (
-          <div className="mt-8 grid md:grid-cols-3 gap-4">
+          <div className="mt-8 grid sm:grid-cols-2 md:grid-cols-3 gap-4">
             {featured.map((r) => (
               <ReviewCard key={r.id} review={r} highlight />
             ))}

@@ -10,13 +10,12 @@ export default function Hero({ snap }: { snap: PublicSnapshot }) {
   const phone = snap.settings.phone;
   const badges = siteContentValue<string[]>(snap, 'hero_badges', []);
 
-  // Empty-state: if no headline at all, render minimal placeholder block.
   const showHeading = headline.trim().length > 0;
 
   return (
     <section id="home" className="bg-gradient-to-b from-slate-50 to-white">
       <div className="max-w-6xl mx-auto px-4 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
-        <div>
+        <div className="order-first">
           {showHeading ? (
             <h1 className="text-3xl md:text-5xl font-bold leading-tight tracking-tight">
               {headline}
@@ -29,21 +28,21 @@ export default function Hero({ snap }: { snap: PublicSnapshot }) {
           {sub ? <p className="mt-4 text-lg text-slate-600">{sub}</p> : null}
           {aboutFirstPara ? <p className="mt-4 text-slate-600">{aboutFirstPara}</p> : null}
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              href={`/c/${snap.clinic.slug}/book`}
-              className="px-5 py-3 rounded-2xl text-white bg-[var(--color-primary)] hover:opacity-90"
-            >
-              Book Appointment
-            </Link>
+          <div className="mt-8 flex flex-col sm:flex-row gap-3">
             {phone ? (
               <a
                 href={`tel:${phone}`}
-                className="px-5 py-3 rounded-2xl border border-slate-200 hover:bg-slate-50"
+                className="w-full sm:w-auto px-6 py-3 rounded-2xl text-white bg-[var(--color-primary)] hover:opacity-90 text-center font-semibold text-base"
               >
-                Call Now
+                📞 Call Now
               </a>
             ) : null}
+            <Link
+              href={`/c/${snap.clinic.slug}/book`}
+              className="w-full sm:w-auto px-5 py-3 rounded-2xl border border-slate-300 text-slate-700 hover:bg-slate-50 text-center text-sm"
+            >
+              Book Appointment
+            </Link>
           </div>
 
           {badges.length > 0 ? (
@@ -60,7 +59,7 @@ export default function Hero({ snap }: { snap: PublicSnapshot }) {
           ) : null}
         </div>
 
-        <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-[var(--color-primary)]/10 to-[var(--color-secondary)]/10">
+        <div className="order-last relative aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-[var(--color-primary)]/20 to-[var(--color-secondary)]/20">
           {heroImg ? (
             <Image
               src={heroImg}
@@ -70,7 +69,24 @@ export default function Hero({ snap }: { snap: PublicSnapshot }) {
               sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover"
             />
-          ) : null}
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 select-none">
+              <svg
+                width="64"
+                height="64"
+                viewBox="0 0 64 64"
+                fill="none"
+                className="opacity-30"
+                aria-hidden="true"
+              >
+                <rect x="24" y="8" width="16" height="48" rx="4" fill="currentColor" className="text-[var(--color-primary)]" />
+                <rect x="8" y="24" width="48" height="16" rx="4" fill="currentColor" className="text-[var(--color-primary)]" />
+              </svg>
+              <span className="text-lg font-semibold opacity-40 text-center px-4">
+                {snap.settings.clinicName || 'Clinic'}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </section>

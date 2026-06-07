@@ -11,12 +11,12 @@ export default function Services({ snap }: { snap: PublicSnapshot }) {
           {snap.services.map((s) => (
             <div
               key={s.id}
-              className="rounded-2xl border border-slate-100 p-5 bg-white shadow-sm hover:shadow-md transition"
+              className="rounded-2xl border border-slate-100 p-5 bg-white shadow-sm hover:shadow-md transition flex flex-col"
             >
               <div className="text-3xl">{s.icon || '🩺'}</div>
               <h3 className="mt-3 font-semibold">{s.name}</h3>
               {s.description ? (
-                <p className="mt-1 text-sm text-slate-600">{s.description}</p>
+                <p className="mt-1 text-sm text-slate-600 flex-1">{s.description}</p>
               ) : null}
             </div>
           ))}

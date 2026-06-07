@@ -11,10 +11,16 @@ export default function Doctors({ snap }: { snap: PublicSnapshot }) {
         <div className="mt-8 grid sm:grid-cols-2 md:grid-cols-3 gap-6">
           {snap.doctors.map((d) => (
             <div key={d.id} className="rounded-2xl bg-white border border-slate-100 overflow-hidden shadow-sm">
-              <div className="relative aspect-[4/3] bg-slate-100">
+              <div className="relative aspect-[4/3] bg-slate-100 flex items-center justify-center">
                 {d.photoUrl ? (
                   <Image src={d.photoUrl} alt={d.name} fill sizes="33vw" className="object-cover" />
-                ) : null}
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-[var(--color-primary)]/15 flex items-center justify-center">
+                    <span className="text-3xl font-bold text-[var(--color-primary)]">
+                      {d.name.trim().charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="p-5">
                 <h3 className="font-semibold">{d.name}</h3>
