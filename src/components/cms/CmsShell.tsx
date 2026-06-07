@@ -19,7 +19,7 @@ const NAV: Array<{ href: string; label: string }> = [
   { href: '/cms/doctors', label: 'Doctors' },
   { href: '/cms/services', label: 'Services' },
   { href: '/cms/reviews', label: 'Reviews' },
-  { href: '/cms/website/hero', label: 'Website' },
+  { href: '/cms/website', label: 'Website' },
   { href: '/cms/settings', label: 'Settings' },
   { href: '/cms/media', label: 'Media' },
   { href: '/cms/audit', label: 'Audit' },
@@ -93,7 +93,7 @@ export default function CmsShell({ user, clinicSlug, customDomain, children }: P
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
           {NAV.map((n) => {
             const active =
-              pathname === n.href || (n.href === '/cms/website/hero' && pathname?.startsWith('/cms/website'));
+              pathname === n.href || (n.href === '/cms/website' && pathname?.startsWith('/cms/website'));
             return (
               <Link
                 key={n.href}

@@ -2,15 +2,13 @@ import type { PublicSnapshot } from '@/lib/content';
 import { parseWorkingHours, formatWorkingHoursHuman } from '@/lib/working-hours';
 
 export default function Location({ snap }: { snap: PublicSnapshot }) {
-  const { address, phone, email, googleMapsUrl, latitude, longitude, googlePlaceId } =
-    snap.settings;
+  const { address, phone, email, googleMapsUrl, latitude, longitude } = snap.settings;
   const hasContact = address || phone || email;
   if (!hasContact && !googleMapsUrl && !latitude) return null;
 
   const wh = parseWorkingHours(snap.settings.workingHours);
   const hoursText = formatWorkingHoursHuman(wh);
 
-  // googlePlaceId embed requires an API key — skip it and fall through to lat/lng or address.
   let embedSrc: string | null = null;
   if (latitude && longitude) {
     embedSrc = `https://www.google.com/maps?q=${latitude},${longitude}&output=embed`;
@@ -27,65 +25,92 @@ export default function Location({ snap }: { snap: PublicSnapshot }) {
       : null);
 
   return (
-    <section id="contact" className="py-10 md:py-20">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-2 gap-6 md:gap-8">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold">Visit Us</h2>
-          <div className="mt-6 space-y-3 text-slate-700">
+    <section id="contact" className="bg-white py-16 md:py-24">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-12">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-sm font-medium text-[var(--color-primary)]">
+            Find Us
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Visit Us</h2>
+        </div>
+
+        <div className="grid gap-8 md:grid-cols-2 md:gap-12">
+          {/* Contact info */}
+          <div className="space-y-4">
             {address ? (
-              <p>
-                <span className="font-medium">Address: </span>
-                {address}
-              </p>
+              <InfoRow icon="📍" label="Address" value={address} />
             ) : null}
             {phone ? (
-              <p>
-                <span className="font-medium">Phone: </span>
-                <a href={`tel:${phone}`} className="text-[var(--color-primary)]">
-                  {phone}
-                </a>
-              </p>
+              <InfoRow
+                icon="📞"
+                label="Phone"
+                value={<a href={`tel:${phone}`} className="text-[var(--color-primary)] hover:underline">{phone}</a>}
+              />
             ) : null}
             {email ? (
-              <p>
-                <span className="font-medium">Email: </span>
-                <a href={`mailto:${email}`} className="text-[var(--color-primary)]">
-                  {email}
-                </a>
-              </p>
+              <InfoRow
+                icon="✉️"
+                label="Email"
+                value={<a href={`mailto:${email}`} className="text-[var(--color-primary)] hover:underline">{email}</a>}
+              />
             ) : null}
-            <p>
-              <span className="font-medium">Hours: </span>
-              <span className="text-sm">{hoursText}</span>
-            </p>
+            {hoursText ? (
+              <InfoRow icon="🕐" label="Hours" value={<span className="text-sm">{hoursText}</span>} />
+            ) : null}
+
+            {directionsUrl ? (
+              <a
+                href={directionsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
+              >
+                Get Directions
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </a>
+            ) : null}
           </div>
-          {directionsUrl ? (
-            <a
-              href={directionsUrl}
-              target="_blank"
-              rel="noopener"
-              className="mt-6 inline-block px-4 py-2 rounded-2xl bg-[var(--color-primary)] text-white text-sm"
-            >
-              Get Directions
-            </a>
-          ) : null}
-        </div>
-        <div className="aspect-[4/3] sm:aspect-[4/3] rounded-2xl overflow-hidden bg-white border border-slate-100 min-h-[220px]">
-          {embedSrc ? (
-            <iframe
-              src={embedSrc}
-              className="w-full h-full"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              title="Clinic location"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">
-              Map unavailable
-            </div>
-          )}
+
+          {/* Map */}
+          <div className="min-h-[240px] overflow-hidden rounded-2xl border border-slate-100 shadow-sm">
+            {embedSrc ? (
+              <iframe
+                src={embedSrc}
+                className="h-full min-h-[240px] w-full"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Clinic location"
+              />
+            ) : (
+              <div className="flex h-full min-h-[240px] items-center justify-center text-sm text-slate-400">
+                Map unavailable
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function InfoRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: string;
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+      <span className="mt-0.5 text-xl">{icon}</span>
+      <div>
+        <div className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</div>
+        <div className="mt-0.5 text-slate-700">{value}</div>
+      </div>
+    </div>
   );
 }
