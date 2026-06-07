@@ -11,7 +11,7 @@ export default function Reviews({ snap }: { snap: PublicSnapshot }) {
   if (snap.reviews.length === 0) return null;
 
   return (
-    <section id="reviews" className="py-16 md:py-24">
+    <section id="reviews" className="py-10 md:py-20 bg-slate-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between flex-wrap gap-4">
           <div>

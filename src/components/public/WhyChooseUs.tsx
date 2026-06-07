@@ -6,10 +6,10 @@ export default function WhyChooseUs({ snap }: { snap: PublicSnapshot }) {
   const items = siteContentValue<Item[]>(snap, 'why_choose_us', []);
   if (!Array.isArray(items) || items.length === 0) return null;
   return (
-    <section className="py-16 md:py-24 bg-slate-50">
+    <section className="py-10 md:py-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-2xl sm:text-3xl font-bold">Why Choose Us</h2>
-        <div className="mt-8 grid sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           {items.map((it, i) => (
             <div key={i} className="rounded-2xl bg-white border border-slate-100 p-5 shadow-sm">
               <div className="text-3xl">{it.icon || '✨'}</div>

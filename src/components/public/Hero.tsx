@@ -14,14 +14,14 @@ export default function Hero({ snap }: { snap: PublicSnapshot }) {
 
   return (
     <section id="home" className="bg-gradient-to-b from-slate-50 to-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-20 grid md:grid-cols-2 gap-6 md:gap-10 items-center">
         <div className="order-first">
           {showHeading ? (
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
               {headline}
             </h1>
           ) : (
-            <h1 className="text-3xl md:text-5xl font-bold leading-tight tracking-tight text-slate-300">
+            <h1 className="text-2xl md:text-5xl font-bold leading-tight tracking-tight text-slate-300">
               {snap.settings.clinicName || 'Welcome'}
             </h1>
           )}
@@ -59,7 +59,7 @@ export default function Hero({ snap }: { snap: PublicSnapshot }) {
           ) : null}
         </div>
 
-        <div className="order-last relative aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-[var(--color-primary)]/20 to-[var(--color-secondary)]/20">
+        <div className="order-last relative aspect-[3/2] sm:aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-[var(--color-primary)]/20 to-[var(--color-secondary)]/20">
           {heroImg ? (
             <Image
               src={heroImg}

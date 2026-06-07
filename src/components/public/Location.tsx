@@ -27,8 +27,8 @@ export default function Location({ snap }: { snap: PublicSnapshot }) {
       : null);
 
   return (
-    <section id="contact" className="py-16 md:py-24 bg-slate-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-2 gap-8">
+    <section id="contact" className="py-10 md:py-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-2 gap-6 md:gap-8">
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold">Visit Us</h2>
           <div className="mt-6 space-y-3 text-slate-700">
@@ -70,7 +70,7 @@ export default function Location({ snap }: { snap: PublicSnapshot }) {
             </a>
           ) : null}
         </div>
-        <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-white border border-slate-100">
+        <div className="aspect-[4/3] sm:aspect-[4/3] rounded-2xl overflow-hidden bg-white border border-slate-100 min-h-[220px]">
           {embedSrc ? (
             <iframe
               src={embedSrc}

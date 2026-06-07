@@ -10,7 +10,7 @@ export default function About({ snap }: { snap: PublicSnapshot }) {
   const paragraphs = about ? about.split(/\n\n+/).filter(Boolean) : [];
 
   return (
-    <section id="about" className="py-16 md:py-24">
+    <section id="about" className="py-10 md:py-20 bg-slate-50">
       <div className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 ${aboutImg ? 'grid md:grid-cols-2 gap-10 items-center' : ''}`}>
         {aboutImg ? (
           <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100">

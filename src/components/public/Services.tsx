@@ -3,11 +3,11 @@ import type { PublicSnapshot } from '@/lib/content';
 export default function Services({ snap }: { snap: PublicSnapshot }) {
   if (snap.services.length === 0) return null;
   return (
-    <section id="services" className="py-16 md:py-24">
+    <section id="services" className="py-10 md:py-20 bg-slate-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-2xl sm:text-3xl font-bold">Our Services</h2>
         <p className="mt-2 text-slate-600">Comprehensive care, all in one place.</p>
-        <div className="mt-8 grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="mt-8 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           {snap.services.map((s) => (
             <div
               key={s.id}

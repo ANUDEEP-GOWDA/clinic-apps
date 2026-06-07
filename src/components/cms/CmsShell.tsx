@@ -29,6 +29,22 @@ const NAV: Array<{ href: string; label: string }> = [
 export default function CmsShell({ user, clinicSlug, customDomain, children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Close sidebar on route change (mobile nav tap)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
+  // Lock body scroll when sidebar is open on mobile
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [sidebarOpen]);
 
   async function logout() {
     await fetch('/api/cms/auth/logout', { method: 'POST' });
@@ -36,17 +52,44 @@ export default function CmsShell({ user, clinicSlug, customDomain, children }: P
     router.refresh();
   }
 
-  // Use the slug URL for the in-app preview (always works, no DNS needed).
-  // Domain confirmation lives in Settings.
   const publicSiteUrl = `/c/${clinicSlug}`;
 
   return (
     <div className="min-h-screen flex bg-slate-50">
-      <aside className="w-56 bg-white border-r border-slate-100 flex flex-col">
-        <div className="px-4 py-4 border-b border-slate-100">
-          <div className="text-[10px] tracking-widest text-slate-400">ATS</div>
-          <div className="font-semibold">Clinic CMS</div>
+      {/* Mobile backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-100 flex flex-col
+          transition-transform duration-200
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:relative md:translate-x-0 md:w-56
+        `}
+      >
+        <div className="px-4 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <div className="text-[10px] tracking-widest text-slate-400">ATS</div>
+            <div className="font-semibold">Clinic CMS</div>
+          </div>
+          {/* Close button - mobile only */}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:bg-slate-50"
+            aria-label="Close menu"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
+
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
           {NAV.map((n) => {
             const active =
@@ -55,7 +98,7 @@ export default function CmsShell({ user, clinicSlug, customDomain, children }: P
               <Link
                 key={n.href}
                 href={n.href}
-                className={`block px-3 py-2 rounded-lg text-sm ${
+                className={`block px-3 py-2.5 rounded-lg text-sm ${
                   active ? 'bg-slate-100 text-slate-900 font-medium' : 'text-slate-700 hover:bg-slate-50'
                 }`}
               >
@@ -64,15 +107,60 @@ export default function CmsShell({ user, clinicSlug, customDomain, children }: P
             );
           })}
         </nav>
-        <div className="p-3 border-t border-slate-100 text-xs text-slate-400">
+
+        {/* User info in sidebar on mobile */}
+        <div className="md:hidden px-4 py-3 border-t border-slate-100">
+          <div className="text-sm font-medium">{user.name || user.email}</div>
+          <div className="text-xs text-slate-500">{user.role}</div>
+          <div className="flex gap-2 mt-2">
+            {clinicSlug && (
+              <a
+                href={publicSiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 text-center text-xs px-2 py-1.5 rounded-lg bg-emerald-600 text-white"
+              >
+                View Site ↗
+              </a>
+            )}
+            <button
+              onClick={logout}
+              className="flex-1 text-xs px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+
+        <div className="hidden md:block p-3 border-t border-slate-100 text-xs text-slate-400">
           <AtsBadge />
         </div>
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 bg-white border-b border-slate-100 flex items-center px-4 gap-4">
-          <PatientSearchBar />
-          <div className="ml-auto flex items-center gap-3">
+        {/* Header */}
+        <header className="h-14 bg-white border-b border-slate-100 flex items-center px-3 gap-3 sticky top-0 z-20">
+          {/* Hamburger - mobile only */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-50 flex-shrink-0"
+            aria-label="Open menu"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
+          {/* Search bar - desktop only */}
+          <div className="hidden md:flex flex-1 max-w-md">
+            <PatientSearchBar />
+          </div>
+
+          {/* Spacer on mobile */}
+          <div className="flex-1 md:hidden" />
+
+          {/* Desktop: View Public Site + user info + logout */}
+          <div className="hidden md:flex items-center gap-3">
             {clinicSlug ? (
               <a
                 href={publicSiteUrl}
@@ -97,7 +185,13 @@ export default function CmsShell({ user, clinicSlug, customDomain, children }: P
             </button>
           </div>
         </header>
-        <main className="flex-1 p-6 overflow-y-auto">{children}</main>
+
+        {/* Mobile search bar row */}
+        <div className="md:hidden px-3 py-2 bg-white border-b border-slate-100">
+          <PatientSearchBar />
+        </div>
+
+        <main className="flex-1 p-4 md:p-6 overflow-y-auto">{children}</main>
       </div>
     </div>
   );
@@ -130,7 +224,7 @@ function PatientSearchBar() {
   }, []);
 
   return (
-    <div ref={ref} className="relative w-full max-w-md">
+    <div ref={ref} className="relative w-full">
       <input
         value={q}
         onChange={(e) => { setQ(e.target.value); setOpen(true); }}

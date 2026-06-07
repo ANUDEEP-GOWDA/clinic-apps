@@ -149,7 +149,7 @@ export default function DailyCalendar({ doctors, doctorId, date, dayData }: Prop
       </div>
 
       {currentDoctor ? (
-        <div className="mb-4 flex items-center gap-3 text-sm">
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
           <span>
             Currently{' '}
             <span className={currentDoctor.acceptingAppointments ? 'text-emerald-700' : 'text-red-700'}>
@@ -160,7 +160,7 @@ export default function DailyCalendar({ doctors, doctorId, date, dayData }: Prop
           <button
             disabled={busy}
             onClick={toggleAccepting}
-            className="px-3 py-1.5 rounded-lg border border-slate-200 disabled:opacity-50"
+            className="px-3 py-1.5 rounded-lg border border-slate-200 disabled:opacity-50 whitespace-nowrap"
           >
             {currentDoctor.acceptingAppointments ? 'Stop taking appointments' : 'Resume appointments'}
           </button>

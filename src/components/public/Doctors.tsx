@@ -4,7 +4,7 @@ import type { PublicSnapshot } from '@/lib/content';
 export default function Doctors({ snap }: { snap: PublicSnapshot }) {
   if (snap.doctors.length === 0) return null;
   return (
-    <section id="doctors" className="py-16 md:py-24 bg-slate-50">
+    <section id="doctors" className="py-10 md:py-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-2xl sm:text-3xl font-bold">Our Doctors</h2>
         <p className="mt-2 text-slate-600">Meet the team caring for you.</p>

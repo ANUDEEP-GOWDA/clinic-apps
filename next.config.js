@@ -4,6 +4,7 @@ const nextConfig = {
   output: 'standalone',
   // This allows the build to finish despite the TypeScript errors
   typescript: {
+    
     ignoreBuildErrors: true,
   },
   images: {
