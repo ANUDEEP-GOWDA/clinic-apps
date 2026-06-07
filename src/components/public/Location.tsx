@@ -10,11 +10,9 @@ export default function Location({ snap }: { snap: PublicSnapshot }) {
   const wh = parseWorkingHours(snap.settings.workingHours);
   const hoursText = formatWorkingHoursHuman(wh);
 
-  // Build embed URL: prefer place id, fall back to lat/lng, then address.
+  // googlePlaceId embed requires an API key — skip it and fall through to lat/lng or address.
   let embedSrc: string | null = null;
-  if (googlePlaceId) {
-    embedSrc = `https://www.google.com/maps/embed/v1/place?key=&q=place_id:${googlePlaceId}`;
-  } else if (latitude && longitude) {
+  if (latitude && longitude) {
     embedSrc = `https://www.google.com/maps?q=${latitude},${longitude}&output=embed`;
   } else if (address) {
     embedSrc = `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
@@ -29,10 +27,10 @@ export default function Location({ snap }: { snap: PublicSnapshot }) {
       : null);
 
   return (
-    <section id="contact" className="py-16 md:py-20 bg-slate-50">
-      <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8">
+    <section id="contact" className="py-16 md:py-24 bg-slate-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-2 gap-8">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold">Visit Us</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold">Visit Us</h2>
           <div className="mt-6 space-y-3 text-slate-700">
             {address ? (
               <p>

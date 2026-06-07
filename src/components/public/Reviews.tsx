@@ -8,14 +8,14 @@ export default function Reviews({ snap }: { snap: PublicSnapshot }) {
   );
   const featured = snap.reviews.filter((r) => r.featured).slice(0, 3);
   const others = snap.reviews.filter((r) => !r.featured).slice(0, 6);
-  if (snap.reviews.length === 0 && !summary.rating) return null;
+  if (snap.reviews.length === 0) return null;
 
   return (
-    <section id="reviews" className="py-16 md:py-20">
-      <div className="max-w-6xl mx-auto px-4">
+    <section id="reviews" className="py-16 md:py-24">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between flex-wrap gap-4">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold">What Patients Say</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold">What Patients Say</h2>
             <p className="mt-2 text-slate-600">Honest words from people we&apos;ve cared for.</p>
           </div>
           {summary.rating && summary.count ? (

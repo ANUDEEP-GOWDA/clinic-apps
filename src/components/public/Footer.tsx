@@ -7,7 +7,7 @@ export default function Footer({ snap }: { snap: PublicSnapshot }) {
 
   return (
     <footer className="bg-slate-900 text-slate-300">
-      <div className="max-w-6xl mx-auto px-4 py-12 grid md:grid-cols-3 gap-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 grid md:grid-cols-3 gap-8">
         <div>
           <div className="text-white font-semibold">{clinicName || 'Clinic'}</div>
           {tagline ? <p className="mt-2 text-sm text-slate-400">{tagline}</p> : null}
@@ -41,7 +41,7 @@ export default function Footer({ snap }: { snap: PublicSnapshot }) {
           </ul>
         </div>
       </div>
-      <div className="border-t border-slate-800 px-4 py-4 text-xs text-slate-500 max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div className="border-t border-slate-800 px-4 sm:px-6 lg:px-8 py-4 text-xs text-slate-500 max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
         <div>
           © {new Date().getFullYear()} {clinicName || ''}. All rights reserved.
         </div>

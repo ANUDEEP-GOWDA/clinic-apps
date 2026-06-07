@@ -22,12 +22,12 @@ export default function Header({ snap }: { snap: PublicSnapshot }) {
 
   return (
     <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-100">
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="#home" className="flex items-center gap-2 font-semibold">
           {logo ? (
             <Image src={logo} alt={name} width={36} height={36} className="rounded" />
           ) : null}
-          <span className="text-lg">{name}</span>
+          <span className="text-lg truncate max-w-[55vw] sm:max-w-none">{name}</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6 text-sm">

@@ -14,10 +14,10 @@ export default function Hero({ snap }: { snap: PublicSnapshot }) {
 
   return (
     <section id="home" className="bg-gradient-to-b from-slate-50 to-white">
-      <div className="max-w-6xl mx-auto px-4 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
         <div className="order-first">
           {showHeading ? (
-            <h1 className="text-3xl md:text-5xl font-bold leading-tight tracking-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
               {headline}
             </h1>
           ) : (

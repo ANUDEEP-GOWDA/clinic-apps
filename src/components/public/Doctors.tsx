@@ -4,9 +4,9 @@ import type { PublicSnapshot } from '@/lib/content';
 export default function Doctors({ snap }: { snap: PublicSnapshot }) {
   if (snap.doctors.length === 0) return null;
   return (
-    <section id="doctors" className="py-16 md:py-20 bg-slate-50">
-      <div className="max-w-6xl mx-auto px-4">
-        <h2 className="text-2xl md:text-3xl font-bold">Our Doctors</h2>
+    <section id="doctors" className="py-16 md:py-24 bg-slate-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 className="text-2xl sm:text-3xl font-bold">Our Doctors</h2>
         <p className="mt-2 text-slate-600">Meet the team caring for you.</p>
         <div className="mt-8 grid sm:grid-cols-2 md:grid-cols-3 gap-6">
           {snap.doctors.map((d) => (
@@ -22,8 +22,8 @@ export default function Doctors({ snap }: { snap: PublicSnapshot }) {
                   </div>
                 )}
               </div>
-              <div className="p-5">
-                <h3 className="font-semibold">{d.name}</h3>
+              <div className="p-5 min-w-0">
+                <h3 className="text-lg font-semibold">{d.name}</h3>
                 {d.qualifications ? (
                   <p className="text-sm text-slate-600">{d.qualifications}</p>
                 ) : null}

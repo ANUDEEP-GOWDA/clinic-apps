@@ -10,15 +10,15 @@ export default function About({ snap }: { snap: PublicSnapshot }) {
   const paragraphs = about ? about.split(/\n\n+/).filter(Boolean) : [];
 
   return (
-    <section id="about" className="py-16 md:py-20">
-      <div className={`max-w-6xl mx-auto px-4 ${aboutImg ? 'grid md:grid-cols-2 gap-10 items-center' : 'max-w-3xl'}`}>
+    <section id="about" className="py-16 md:py-24">
+      <div className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 ${aboutImg ? 'grid md:grid-cols-2 gap-10 items-center' : ''}`}>
         {aboutImg ? (
           <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100">
             <Image src={aboutImg} alt="About the clinic" fill sizes="50vw" className="object-cover" />
           </div>
         ) : null}
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold">About Us</h2>
+        <div className={aboutImg ? '' : 'max-w-3xl'}>
+          <h2 className="text-2xl sm:text-3xl font-bold">About Us</h2>
           {paragraphs.map((p, i) => (
             <p key={i} className="mt-4 text-slate-600">
               {p}
