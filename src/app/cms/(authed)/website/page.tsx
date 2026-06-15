@@ -1,95 +1,73 @@
 import { ssrTenant } from '@/lib/ssr-tenant';
-import { parseTheme } from '@/lib/theme';
-import WebsiteBuilder from '@/components/cms/WebsiteBuilder';
+import WebsiteEditor from '@/components/cms/WebsiteEditor';
 
 export const dynamic = 'force-dynamic';
 
-async function getContent<T>(
+type FAQ = { question: string; answer: string };
+type Pkg = { name: string; label: string; price: string; img: string };
+type HL = { title: string; description: string };
+
+async function getJson<T>(
   tdb: Awaited<ReturnType<typeof ssrTenant>>['tdb'],
   key: string,
-  fallback: T,
+  fb: T
 ): Promise<T> {
   const row = await tdb.siteContent.findFirst({ where: { key } });
-  if (!row) return fallback;
-  return (row.value as T) ?? fallback;
+  if (!row) return fb;
+  return (row.value as T) ?? fb;
 }
 
 async function getString(
   tdb: Awaited<ReturnType<typeof ssrTenant>>['tdb'],
-  key: string,
+  key: string
 ): Promise<string> {
-  const v = await getContent<unknown>(tdb, key, '');
+  const row = await tdb.siteContent.findFirst({ where: { key } });
+  if (!row) return '';
+  const v = row.value;
   return typeof v === 'string' ? v : '';
 }
 
 export default async function WebsitePage() {
   const { tdb } = await ssrTenant();
 
-  const [
-    settings,
-    heroBadges,
-    aboutImageUrl,
-    aboutBullets,
-    whyChooseUs,
-    faq,
-    googleRating,
-    footerTagline,
-    serviceAreas,
-    seoTitle,
-    seoDescription,
-    seoKeywords,
-    clinic,
-  ] = await Promise.all([
-    tdb.settings.findFirst(),
-    getContent<string[]>(tdb, 'hero_badges', []),
-    getString(tdb, 'about_image_url'),
-    getContent<string[]>(tdb, 'about_bullets', []),
-    getContent<{ icon: string; title: string; description: string }[]>(tdb, 'why_choose_us', []),
-    getContent<{ question: string; answer: string }[]>(tdb, 'faq', []),
-    getContent<{ rating: number; count: number }>(tdb, 'google_rating_summary', { rating: 0, count: 0 }),
-    getString(tdb, 'footer_tagline'),
-    getContent<string[]>(tdb, 'service_areas', []),
-    getString(tdb, 'seo_default_title'),
-    getString(tdb, 'seo_default_description'),
-    getString(tdb, 'seo_keywords'),
-    tdb.clinic.findFirst({ select: { slug: true } }),
-  ]);
+  const [settings, packages, highlights, faqs, seoTitle, seoDesc, galleryImages, services, doctors, reviews] =
+    await Promise.all([
+      tdb.settings.findFirst(),
+      getJson<Pkg[]>(tdb, 'packages', []),
+      getJson<HL[]>(tdb, 'why_choose_us', []),
+      getJson<FAQ[]>(tdb, 'faq', []),
+      getString(tdb, 'seo_default_title'),
+      getString(tdb, 'seo_default_description'),
+      getJson<string[]>(tdb, 'gallery_images', []),
+      tdb.service.findMany({ where: { active: true }, orderBy: { displayOrder: 'asc' }, select: { name: true } }),
+      tdb.doctor.findMany({ where: { active: true }, orderBy: { displayOrder: 'asc' }, select: { name: true } }),
+      tdb.review.count(),
+    ]);
 
-  const theme = parseTheme(settings?.themeConfig ?? '{}');
+  const s = settings;
 
   return (
-    <div>
-      <div className="mb-5">
-        <h1 className="text-xl font-semibold">Website Builder</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Edit your public site content and see a live preview on the right.
-        </p>
-      </div>
-      <WebsiteBuilder
-        initial={{
-          clinicSlug: clinic?.slug ?? '',
-          settings: {
-            heroHeadline: settings?.heroHeadline ?? '',
-            heroSubheadline: settings?.heroSubheadline ?? '',
-            heroImageUrl: settings?.heroImageUrl ?? '',
-            about: settings?.about ?? '',
-            logoUrl: settings?.logoUrl ?? '',
-            faviconUrl: settings?.faviconUrl ?? '',
-          },
-          theme,
-          heroBadges,
-          aboutImageUrl,
-          aboutBullets,
-          whyChooseUs,
-          faq,
-          googleRating: { rating: googleRating?.rating ?? 0, count: googleRating?.count ?? 0 },
-          footerTagline,
-          serviceAreas,
-          seoTitle,
-          seoDescription,
-          seoKeywords,
-        }}
-      />
-    </div>
+    <WebsiteEditor
+      settings={{
+        clinicName: s?.clinicName ?? '',
+        tagline: s?.tagline ?? '',
+        about: s?.about ?? '',
+        phone: s?.phone ?? '',
+        email: s?.email ?? '',
+        address: s?.address ?? '',
+        googleMapsUrl: s?.googleMapsUrl ?? '',
+        latitude: s?.latitude ?? null,
+        longitude: s?.longitude ?? null,
+      }}
+      packages={packages}
+      highlights={highlights}
+      faqs={faqs}
+      seo={{ title: seoTitle, description: seoDesc }}
+      gallery={galleryImages}
+      currentTemplate={(s as any)?.selectedTemplate || 'classic'}
+      serviceSummary={services}
+      doctorSummary={doctors}
+      reviewCount={reviews}
+    />
   );
 }

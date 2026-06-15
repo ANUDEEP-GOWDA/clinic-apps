@@ -94,8 +94,7 @@ export default function CmsShell({ user, clinicSlug, customDomain, emailVerified
 
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
           {NAV.map((n) => {
-            const active =
-              pathname === n.href || (n.href === '/cms/website' && pathname?.startsWith('/cms/website'));
+            const active = pathname === n.href || pathname?.startsWith(n.href + '/');
             return (
               <Link
                 key={n.href}

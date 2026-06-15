@@ -9,6 +9,8 @@ import WhyChooseUs from '@/components/public/WhyChooseUs';
 import Reviews from '@/components/public/Reviews';
 import Location from '@/components/public/Location';
 import Footer from '@/components/public/Footer';
+import TemplateVoldog from '@/components/public/templates/TemplateVoldog';
+import TemplateLikha from '@/components/public/templates/TemplateLikha';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +23,15 @@ export default async function HomePage({
   if (!snap) notFound();
 
   const phone = snap.settings.phone;
+  const selectedTemplate = snap.settings.selectedTemplate || 'classic';
+
+  if (selectedTemplate === 'voldog') {
+    return <TemplateVoldog snap={snap} />;
+  }
+
+  if (selectedTemplate === 'likha') {
+    return <TemplateLikha snap={snap} />;
+  }
 
   return (
     <main className={`bg-white text-slate-900 antialiased${phone ? ' pb-20 md:pb-0' : ''}`}>

@@ -4,13 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const TABS = [
-  { href: '/cms/website/hero', label: 'Hero' },
-  { href: '/cms/website/about', label: 'About' },
-  { href: '/cms/website/why-choose-us', label: 'Why Us' },
+  { href: '/cms/website/hero', label: 'Content' },
+  { href: '/cms/website/about', label: 'Packages' },
+  { href: '/cms/website/why-choose-us', label: 'Highlights' },
   { href: '/cms/website/faq', label: 'FAQ' },
-  { href: '/cms/website/extras', label: 'Extras' },
-  { href: '/cms/website/seo', label: 'SEO' },
-  { href: '/cms/website/theme', label: 'Theme' },
+  { href: '/cms/website/seo', label: 'Google Search' },
+  { href: '/cms/website/theme', label: 'Template' },
 ];
 
 export default function WebsiteTabs() {

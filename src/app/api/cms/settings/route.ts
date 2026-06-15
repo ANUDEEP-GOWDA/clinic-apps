@@ -9,7 +9,7 @@ const ALLOWED = [
   'clinicName', 'tagline', 'about', 'address', 'phone', 'email',
   'googlePlaceId', 'googleMapsUrl', 'latitude', 'longitude', 'timezone',
   'workingHours', 'themeConfig', 'logoUrl', 'faviconUrl', 'heroImageUrl',
-  'heroHeadline', 'heroSubheadline',
+  'heroHeadline', 'heroSubheadline', 'selectedTemplate',
 ];
 
 const DOMAIN_RE = /^(?!-)[a-z0-9-]{1,63}(?<!-)(?:\.[a-z0-9-]{1,63})+$/i;

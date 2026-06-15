@@ -1,22 +1,23 @@
 import { ssrTenant } from '@/lib/ssr-tenant';
-import ThemeEditor from '@/components/cms/ThemeEditor';
+import TemplateSelector from '@/components/cms/TemplateSelector';
 import WebsiteTabs from '@/components/cms/WebsiteTabs';
-import { parseTheme } from '@/lib/theme';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ThemePage() {
   const { tdb } = await ssrTenant();
   const s = await tdb.settings.findFirst();
-  const theme = parseTheme(s?.themeConfig ?? '{}');
+  const currentTemplate = (s as any)?.selectedTemplate || 'classic';
+
   return (
     <div>
       <WebsiteTabs />
-      <h1 className="text-xl font-semibold mt-6 mb-1">Theme</h1>
+
+      <h1 className="text-xl font-semibold mt-6 mb-1">Website Template</h1>
       <p className="text-sm text-slate-500 mb-4">
-        Brand colors and font for the public site. Changes take effect immediately on save.
+        Choose a design for your public website. The change is instant.
       </p>
-      <ThemeEditor initial={theme} />
+      <TemplateSelector current={currentTemplate} />
     </div>
   );
 }

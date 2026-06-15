@@ -157,6 +157,7 @@ model Settings {
   heroImageUrl    String   @default("")
   heroHeadline    String   @default("")
   heroSubheadline String   @default("")
+  selectedTemplate String  @default("classic")
   updatedAt       DateTime @updatedAt
 }
 

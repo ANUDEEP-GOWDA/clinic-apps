@@ -33,6 +33,7 @@ export type PublicSnapshot = {
     heroImageUrl: string;
     heroHeadline: string;
     heroSubheadline: string;
+    selectedTemplate: string;
   };
   doctors: Array<{
     id: number;
@@ -88,6 +89,7 @@ const EMPTY_SETTINGS: PublicSnapshot['settings'] = {
   heroImageUrl: '',
   heroHeadline: '',
   heroSubheadline: '',
+  selectedTemplate: 'classic',
 };
 
 export async function getPublicSnapshot(clinicSlug: string): Promise<PublicSnapshot | null> {
@@ -136,6 +138,7 @@ export async function getPublicSnapshot(clinicSlug: string): Promise<PublicSnaps
           heroImageUrl: settings.heroImageUrl,
           heroHeadline: settings.heroHeadline,
           heroSubheadline: settings.heroSubheadline,
+          selectedTemplate: settings.selectedTemplate,
         }
       : { ...EMPTY_SETTINGS, clinicName: clinic.name },
     doctors: doctors.map((d) => ({
