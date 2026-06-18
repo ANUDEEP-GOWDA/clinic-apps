@@ -4,7 +4,7 @@ import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-const ERRORS: Record<string, string> = {
+const LOGIN_ERRORS: Record<string, string> = {
   invalid_credentials: 'Wrong email or password.',
   inactive: 'This account is inactive. Contact your clinic owner.',
   locked: 'Too many failed attempts. Try again in 15 minutes.',
@@ -16,13 +16,16 @@ function LoginForm() {
   const router = useRouter();
   const search = useSearchParams();
   const next = search.get('next') || '/cms/dashboard';
+
+  const [step, setStep] = useState<'password' | 'mfa'>('password');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [mfaCode, setMfaCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function submit(e: React.FormEvent) {
+  async function submitPassword(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setBusy(true);
@@ -34,11 +37,11 @@ function LoginForm() {
       });
       const j = (await res.json()) as { ok?: boolean; error?: string; requiresMfa?: boolean };
       if (!res.ok || !j.ok) {
-        setError(ERRORS[j.error ?? ''] ?? 'Login failed.');
+        setError(LOGIN_ERRORS[j.error ?? ''] ?? 'Login failed.');
         return;
       }
       if (j.requiresMfa) {
-        setError('Multi-factor auth not yet implemented for this account.');
+        setStep('mfa');
         return;
       }
       router.push(next);
@@ -50,9 +53,74 @@ function LoginForm() {
     }
   }
 
+  async function submitMfa(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      const res = await fetch('/api/cms/auth/mfa/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: mfaCode.replace(/\s/g, '') }),
+      });
+      const j = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !j.ok) {
+        setError(j.error === 'invalid_code' ? 'Incorrect code. Try again.' : 'Verification failed.');
+        return;
+      }
+      router.push(next);
+      router.refresh();
+    } catch {
+      setError('Network error.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (step === 'mfa') {
+    return (
+      <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <form onSubmit={submitMfa}
+          className="w-full max-w-sm bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <button type="button" onClick={() => { setStep('password'); setMfaCode(''); setError(null); }}
+              className="text-slate-400 hover:text-slate-600">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <div>
+              <h1 className="text-xl font-semibold">Two-factor authentication</h1>
+              <p className="text-sm text-slate-500">Enter the 6-digit code from your authenticator app.</p>
+            </div>
+          </div>
+          <div className="mt-4 space-y-3">
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ''))}
+              placeholder="000000"
+              className="w-full rounded-2xl border border-slate-200 px-3 py-3 text-center text-2xl tracking-widest font-mono"
+              autoFocus
+              required
+            />
+            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            <button type="submit" disabled={busy || mfaCode.length !== 6}
+              className="w-full px-4 py-2 rounded-2xl text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50">
+              {busy ? 'Verifying…' : 'Verify'}
+            </button>
+          </div>
+        </form>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-      <form onSubmit={submit}
+      <form onSubmit={submitPassword}
         className="w-full max-w-sm bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
         <h1 className="text-xl font-semibold">Sign in</h1>
         <p className="text-sm text-slate-500 mt-1">Sign in to manage your clinic.</p>

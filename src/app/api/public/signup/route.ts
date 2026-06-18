@@ -7,6 +7,7 @@ import { withIdempotency } from '@/lib/idempotency';
 import { env } from '@/lib/env';
 import { log } from '@/lib/log';
 import { Role } from '@prisma/client';
+import { createAndSendVerificationEmail } from '@/lib/email-verification';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -91,9 +92,9 @@ export async function POST(req: NextRequest) {
     const slug = await uniqueSlug(slugify(clinicName));
     const passwordHash = await hashPassword(ownerPassword);
 
-    const clinic = await prisma.$transaction(async (tx) => {
+    const { clinic, userId } = await prisma.$transaction(async (tx) => {
       const c = await tx.clinic.create({ data: { slug, name: clinicName } });
-      await tx.user.create({
+      const u = await tx.user.create({
         data: {
           clinicId: c.id,
           name: ownerName,
@@ -111,10 +112,14 @@ export async function POST(req: NextRequest) {
           entityId: c.id,
         },
       });
-      return c;
+      return { clinic: c, userId: u.id };
     });
 
     log.info('signup.clinic_created', { clinicId: clinic.id, slug: clinic.slug });
+
+    // Fire-and-forget — don't block signup if email fails
+    createAndSendVerificationEmail(userId).catch(() => {});
+
     return { ok: true as const, clinicSlug: clinic.slug };
   });
 

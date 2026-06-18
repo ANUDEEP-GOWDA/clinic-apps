@@ -9,6 +9,7 @@ type Props = {
   user: { name: string; email: string; role: string };
   clinicSlug: string;
   customDomain: string | null;
+  emailVerified: boolean;
   children: React.ReactNode;
 };
 
@@ -24,9 +25,10 @@ const NAV: Array<{ href: string; label: string }> = [
   { href: '/cms/media', label: 'Media' },
   { href: '/cms/audit', label: 'Audit' },
   { href: '/cms/backup', label: 'Backup' },
+  { href: '/cms/account', label: 'Account' },
 ];
 
-export default function CmsShell({ user, clinicSlug, customDomain, children }: Props) {
+export default function CmsShell({ user, clinicSlug, customDomain, emailVerified, children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -191,6 +193,16 @@ export default function CmsShell({ user, clinicSlug, customDomain, children }: P
           <PatientSearchBar />
         </div>
 
+        {!emailVerified && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center gap-3 text-sm text-amber-800">
+            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+            </svg>
+            <span>Please verify your email address to keep your account secure.</span>
+            <Link href="/cms/account" className="ml-auto underline whitespace-nowrap">Verify now</Link>
+          </div>
+        )}
         <main className="flex-1 p-4 md:p-6 overflow-y-auto">{children}</main>
       </div>
     </div>

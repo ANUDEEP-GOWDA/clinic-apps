@@ -9,12 +9,16 @@ export default async function AuthedLayout({ children }: { children: React.React
   const session = await getSession();
   if (!session.userId || !session.clinicId) redirect('/cms/login');
 
-  // Fetch current custom domain (if set) so the "View Public Site" button
-  // can prefer the custom domain over the slug URL.
-  const clinic = await prisma.clinic.findUnique({
-    where: { id: session.clinicId },
-    select: { slug: true, customDomain: true },
-  });
+  const [clinic, user] = await Promise.all([
+    prisma.clinic.findUnique({
+      where: { id: session.clinicId },
+      select: { slug: true, customDomain: true },
+    }),
+    prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { emailVerified: true },
+    }),
+  ]);
 
   return (
     <CmsShell
@@ -25,6 +29,7 @@ export default async function AuthedLayout({ children }: { children: React.React
       }}
       clinicSlug={clinic?.slug ?? ''}
       customDomain={clinic?.customDomain ?? null}
+      emailVerified={user?.emailVerified ?? true}
     >
       {children}
     </CmsShell>

@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { getIronSession, type SessionOptions } from 'iron-session';
+import { getIronSession, type IronSession, type SessionOptions } from 'iron-session';
 import bcrypt from 'bcryptjs';
 import { Role } from '@prisma/client';
 import { prisma } from './db';
@@ -43,7 +43,7 @@ function sessionOptions(): SessionOptions {
   };
 }
 
-export async function getSession(): Promise<CmsSession> {
+export async function getSession(): Promise<IronSession<CmsSession>> {
   return getIronSession<CmsSession>(cookies(), sessionOptions());
 }
 

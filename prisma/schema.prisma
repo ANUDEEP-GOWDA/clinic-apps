@@ -98,6 +98,8 @@ model User {
   failedLoginCount Int       @default(0)
   lockedUntil      DateTime?
 
+  emailVerified    Boolean   @default(false)
+
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -107,6 +109,17 @@ model User {
 }
 
 model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model EmailVerificationToken {
   id        Int       @id @default(autoincrement())
   userId    Int
   tokenHash String    @unique
