@@ -132,8 +132,12 @@ export default function TemplateVoldog({ snap }: { snap: any }) {
   const clinicName  = s.clinicName || 'MediCore Clinic';
   const tagline     = s.tagline   || 'Expert Care, exactly as it should be.';
   const phone       = s.phone     || '+91 98765 43210';
+  const address     = s.address   || '';
+  const email       = s.email     || '';
+  const heroImageUrl = s.heroImageUrl || '';
   const about       = s.about     || 'We deliver world-class healthcare with cutting-edge technology and genuine compassion. Trusted by thousands of patients across the region.';
   const bookUrl     = `/c/${clinicSlug}/book`;
+  const doctors: any[] = snap?.doctors ?? [];
 
   /* Services — from CMS → Services page */
   const dbServices = (snap?.services ?? []).map((svc: any) => ({
@@ -370,6 +374,59 @@ export default function TemplateVoldog({ snap }: { snap: any }) {
 
 
 
+      {/* ── MARQUEE ──────────────────────────────────────────────────── */}
+      <Marquee text={tagline} />
+
+      {/* ── SERVICES ─────────────────────────────────────────────────── */}
+      <section id="services" className="py-24 max-w-7xl mx-auto px-6">
+        <FadeUp>
+          <p className="text-xs font-black tracking-widest uppercase text-[#7a9e20] mb-4">What We Offer</p>
+          <h2 className="text-4xl md:text-5xl font-black leading-tight mb-16">Our services</h2>
+        </FadeUp>
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
+          {services.map((svc: any, i: number) => (
+            <FadeUp key={i} delay={i * 0.08}>
+              <div className="border border-[#dde5b6] rounded-2xl p-6 hover:border-[#b5c940] hover:shadow-md transition-all duration-300 bg-white">
+                <div className="text-3xl mb-3">{svc.icon || '✦'}</div>
+                <h3 className="font-black text-lg mb-2 text-[#1a2a00]">{svc.title ?? svc.name}</h3>
+                <p className="text-[#4a6020] font-medium text-sm leading-relaxed">{svc.desc ?? svc.description}</p>
+              </div>
+            </FadeUp>
+          ))}
+        </div>
+      </section>
+
+      <Marquee text="Trusted Care · Expert Doctors · Your Health First" reverse />
+
+      {/* ── DOCTORS ───────────────────────────────────────────────────── */}
+      {doctors.length > 0 && (
+        <section id="doctors" className="py-24 bg-[#f8faf0]">
+          <div className="max-w-7xl mx-auto px-6">
+            <FadeUp>
+              <p className="text-xs font-black tracking-widest uppercase text-[#7a9e20] mb-4">Our Team</p>
+              <h2 className="text-4xl md:text-5xl font-black leading-tight mb-16">Meet our doctors</h2>
+            </FadeUp>
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+              {doctors.map((doc: any, i: number) => (
+                <FadeUp key={doc.id} delay={i * 0.07}>
+                  <div className="bg-white rounded-2xl overflow-hidden border border-[#dde5b6] hover:border-[#b5c940] hover:shadow-md transition-all duration-300">
+                    {doc.photoUrl
+                      ? <img src={doc.photoUrl} alt={doc.name} className="w-full h-48 object-cover" />
+                      : <div className="w-full h-48 bg-[#2d4700] flex items-center justify-center text-5xl text-[#b5c940]">✦</div>
+                    }
+                    <div className="p-5">
+                      <h3 className="font-black text-lg text-[#1a2a00] mb-1">{doc.name}</h3>
+                      <p className="text-xs text-[#7a9e20] font-bold uppercase tracking-wide mb-2">{doc.specialties || doc.qualifications}</p>
+                      {doc.bio && <p className="text-sm text-[#4a6020] line-clamp-3">{doc.bio}</p>}
+                    </div>
+                  </div>
+                </FadeUp>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── PACKAGES (dark section) ───────────────────────────────────── */}
       <section id="packages" className="bg-[#1a2a00] py-24 rounded-[3rem] mx-4 md:mx-10 my-10 overflow-hidden relative">
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle, #b5c940 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
@@ -434,7 +491,7 @@ export default function TemplateVoldog({ snap }: { snap: any }) {
           </FadeUp>
           <FadeUp delay={0.2}>
             <div className="relative h-[550px] rounded-[3rem] overflow-hidden shadow-2xl">
-              <img src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?q=80&w=900&auto=format&fit=crop" alt="Clinic" className="w-full h-full object-cover" />
+              <img src={heroImageUrl || 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?q=80&w=900&auto=format&fit=crop'} alt="Clinic" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#1a2a00]/50 to-transparent" />
               <div className="absolute bottom-8 left-8 right-8 bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20">
                 <p className="text-white font-black text-2xl">10,000+</p>
@@ -519,6 +576,8 @@ export default function TemplateVoldog({ snap }: { snap: any }) {
             <div>
               <h4 className="font-black uppercase tracking-widest text-xs text-[#b5c940] mb-4">Contact</h4>
               <a href={`tel:${phone}`} className="text-white/60 hover:text-[#b5c940] font-medium transition block mb-2">{phone}</a>
+              {email && <a href={`mailto:${email}`} className="text-white/60 hover:text-[#b5c940] font-medium transition block mb-2">{email}</a>}
+              {address && <p className="text-white/60 font-medium text-sm mb-4">{address}</p>}
               <PillBtn href={bookUrl}>Book Appointment →</PillBtn>
             </div>
           </div>
