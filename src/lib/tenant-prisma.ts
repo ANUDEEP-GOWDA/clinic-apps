@@ -42,6 +42,7 @@ const TENANT_MODELS = [
   'outboxJob',
   'whatsappMessage',
   'auditLog',
+  'payment',
 ] as const;
 
 type TenantModel = (typeof TENANT_MODELS)[number];

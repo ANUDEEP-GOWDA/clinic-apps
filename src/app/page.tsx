@@ -1,7 +1,4 @@
-import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,25 +7,7 @@ export const metadata = {
   description: 'A simple, secure clinic management system with built-in website.',
 };
 
-const SYSTEM_HOST_PARTS = ['railway.app', 'localhost', 'vercel.app'];
-
-export default async function Landing() {
-  // If the request came in via a custom clinic domain, redirect to that
-  // clinic's public site instead of showing the marketing landing.
-  const h = headers();
-  const host = (h.get('host') || '').toLowerCase().split(':')[0];
-  const isSystemHost = SYSTEM_HOST_PARTS.some((s) => host.endsWith(s));
-
-  if (host && !isSystemHost) {
-    const clinic = await prisma.clinic.findUnique({
-      where: { customDomain: host },
-      select: { slug: true, active: true },
-    });
-    if (clinic && clinic.active) {
-      redirect(`/c/${clinic.slug}`);
-    }
-  }
-
+export default function Landing() {
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="max-w-4xl mx-auto px-6 py-20">

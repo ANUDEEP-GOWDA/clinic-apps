@@ -17,6 +17,7 @@ const NAV: Array<{ href: string; label: string }> = [
   { href: '/cms/dashboard', label: 'Dashboard' },
   { href: '/cms/calendar', label: 'Calendar' },
   { href: '/cms/patients', label: 'Patients' },
+  { href: '/cms/payments', label: 'Payments' },
   { href: '/cms/doctors', label: 'Doctors' },
   { href: '/cms/services', label: 'Services' },
   { href: '/cms/reviews', label: 'Reviews' },

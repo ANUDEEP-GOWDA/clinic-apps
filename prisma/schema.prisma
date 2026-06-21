@@ -64,6 +64,7 @@ model Clinic {
   whatsappMessages        WhatsappMessage[]
   auditLogs               AuditLog[]
   settings                Settings?
+  payments                Payment[]
 
   @@index([active])
   @@index([customDomain])
@@ -263,6 +264,7 @@ model Patient {
 
   cards            Card[]
   whatsappMessages WhatsappMessage[]
+  payments         Payment[]
 
   @@unique([clinicId, phone])
   @@index([clinicId, name])
@@ -312,6 +314,7 @@ model Card {
   attachments         ConsultationAttachment[]
   outboxJobs          OutboxJob[]
   whatsappMessages    WhatsappMessage[]
+  payments            Payment[]
 
   @@index([clinicId, doctorId, slotDatetime])
   @@index([clinicId, patientId])
@@ -503,6 +506,47 @@ model AuditLog {
   @@index([clinicId, entityType, entityId])
   @@index([clinicId, createdAt])
   @@index([clinicId, userId, createdAt])
+}
+
+// =============================================================================
+// PAYMENTS — per-clinic billing, Razorpay payment links
+// =============================================================================
+
+model Payment {
+  id                Int       @id @default(autoincrement())
+  clinicId          Int
+  clinic            Clinic    @relation(fields: [clinicId], references: [id])
+  cardId            Int?
+  card              Card?     @relation(fields: [cardId], references: [id])
+  patientId         Int
+  patient           Patient   @relation(fields: [patientId], references: [id])
+
+  billNumber        String    @unique @default("")
+  lineItems         Json      @default("[]")   // [{name, qty, rate, amount}]
+  subtotal          Int                         // in paise
+  discountAmount    Int       @default(0)       // in paise
+  taxAmount         Int       @default(0)       // in paise
+  totalAmount       Int                         // in paise
+  currency          String    @default("INR")
+  notes             String    @default("")
+
+  status            String    @default("pending")
+  // pending | paid | failed | refunded
+
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  razorpaySignature String?
+  razorpayLinkId    String?
+  razorpayLinkUrl   String?
+
+  paidAt            DateTime?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([clinicId, status, createdAt])
+  @@index([clinicId, patientId])
+  @@index([clinicId, cardId])
 }
 
 // =============================================================================

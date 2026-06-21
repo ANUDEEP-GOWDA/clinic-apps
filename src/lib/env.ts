@@ -31,6 +31,11 @@ type EnvSchema = {
   META_WHATSAPP_VERIFY_TOKEN?: string;
   GOOGLE_PLACES_API_KEY?: string;
   SIGNUP_INVITE_CODE?: string;
+
+  // Razorpay (optional — payments disabled if unset)
+  RAZORPAY_KEY_ID?: string;
+  RAZORPAY_KEY_SECRET?: string;
+  RAZORPAY_WEBHOOK_SECRET?: string;
 };
 
 function required(name: string, value: string | undefined, minLen = 1): string {
@@ -77,6 +82,9 @@ function loadEnv(): EnvSchema {
       META_WHATSAPP_VERIFY_TOKEN: envSource.META_WHATSAPP_VERIFY_TOKEN,
       GOOGLE_PLACES_API_KEY: envSource.GOOGLE_PLACES_API_KEY,
       SIGNUP_INVITE_CODE: envSource.SIGNUP_INVITE_CODE,
+      RAZORPAY_KEY_ID: envSource.RAZORPAY_KEY_ID,
+      RAZORPAY_KEY_SECRET: envSource.RAZORPAY_KEY_SECRET,
+      RAZORPAY_WEBHOOK_SECRET: envSource.RAZORPAY_WEBHOOK_SECRET,
     } as EnvSchema;
   }
 
@@ -100,6 +108,9 @@ function loadEnv(): EnvSchema {
     META_WHATSAPP_VERIFY_TOKEN: optional(envSource.META_WHATSAPP_VERIFY_TOKEN),
     GOOGLE_PLACES_API_KEY: optional(envSource.GOOGLE_PLACES_API_KEY),
     SIGNUP_INVITE_CODE: optional(envSource.SIGNUP_INVITE_CODE),
+    RAZORPAY_KEY_ID: optional(envSource.RAZORPAY_KEY_ID),
+    RAZORPAY_KEY_SECRET: optional(envSource.RAZORPAY_KEY_SECRET),
+    RAZORPAY_WEBHOOK_SECRET: optional(envSource.RAZORPAY_WEBHOOK_SECRET),
   };
 
   return validatedEnv;
