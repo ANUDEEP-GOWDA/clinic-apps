@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   DAY_KEYS, type DayKey, parseWorkingHours, stringifyWorkingHours,
@@ -44,9 +44,22 @@ export default function SettingsEditor({ initial }: { initial: Initial }) {
   const [domainStatus, setDomainStatus] = useState<
     null | { state: 'checking' | 'ok' | 'misconfigured' | 'unset'; detail?: string }
   >(null);
+  const [uploading, setUploading] = useState<Record<string, boolean>>({});
 
   function set<K extends keyof Initial>(k: K, v: Initial[K]) {
     setS((p) => ({ ...p, [k]: v }));
+  }
+
+  async function uploadImage(field: keyof Initial, file: File) {
+    setUploading((u) => ({ ...u, [field]: true }));
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch('/api/cms/media/upload', { method: 'POST', body: form });
+      const data = (await res.json()) as { ok?: boolean; media?: { url: string } };
+      if (data.ok && data.media?.url) set(field, data.media.url as Initial[typeof field]);
+    } catch {}
+    setUploading((u) => ({ ...u, [field]: false }));
   }
 
   function addWindow(d: DayKey) {
@@ -66,10 +79,7 @@ export default function SettingsEditor({ initial }: { initial: Initial }) {
     try {
       const r = await fetch(`/api/cms/settings/check-domain?d=${encodeURIComponent(d)}`);
       const j = (await r.json()) as { ok?: boolean; detail?: string };
-      setDomainStatus({
-        state: j.ok ? 'ok' : 'misconfigured',
-        detail: j.detail,
-      });
+      setDomainStatus({ state: j.ok ? 'ok' : 'misconfigured', detail: j.detail });
     } catch {
       setDomainStatus({ state: 'misconfigured', detail: 'Could not check. Try again.' });
     }
@@ -92,9 +102,11 @@ export default function SettingsEditor({ initial }: { initial: Initial }) {
         setStatus('Saved.');
         router.refresh();
       } else {
-        setStatus(j.error === 'domain_taken' ? 'That domain is already used by another clinic.' :
-                  j.error === 'invalid_domain' ? 'Domain looks invalid. Use format: example.com' :
-                  'Save failed.');
+        setStatus(
+          j.error === 'domain_taken' ? 'That domain is already used by another clinic.' :
+          j.error === 'invalid_domain' ? 'Domain looks invalid. Use format: example.com' :
+          'Save failed.'
+        );
       }
     } catch {
       setStatus('Network error.');
@@ -180,11 +192,42 @@ export default function SettingsEditor({ initial }: { initial: Initial }) {
 
       <Section title="Branding & Hero">
         <div className="grid sm:grid-cols-2 gap-3">
-          <Field label="Logo URL"><input className="input" value={s.logoUrl} onChange={(e) => set('logoUrl', e.target.value)} /></Field>
-          <Field label="Favicon URL"><input className="input" value={s.faviconUrl} onChange={(e) => set('faviconUrl', e.target.value)} /></Field>
-          <Field label="Hero image URL" full><input className="input" value={s.heroImageUrl} onChange={(e) => set('heroImageUrl', e.target.value)} /></Field>
-          <Field label="Hero headline" full><input className="input" value={s.heroHeadline} onChange={(e) => set('heroHeadline', e.target.value)} /></Field>
-          <Field label="Hero subheadline" full><input className="input" value={s.heroSubheadline} onChange={(e) => set('heroSubheadline', e.target.value)} /></Field>
+          <Field label="Logo">
+            <ImageUploadField
+              value={s.logoUrl}
+              onChange={(v) => set('logoUrl', v)}
+              onUpload={(f) => uploadImage('logoUrl', f)}
+              uploading={!!uploading['logoUrl']}
+              accept="image/*"
+              placeholder="Logo URL"
+            />
+          </Field>
+          <Field label="Favicon">
+            <ImageUploadField
+              value={s.faviconUrl}
+              onChange={(v) => set('faviconUrl', v)}
+              onUpload={(f) => uploadImage('faviconUrl', f)}
+              uploading={!!uploading['faviconUrl']}
+              accept="image/png,image/x-icon,image/svg+xml"
+              placeholder="Favicon URL"
+            />
+          </Field>
+          <Field label="Hero image" full>
+            <ImageUploadField
+              value={s.heroImageUrl}
+              onChange={(v) => set('heroImageUrl', v)}
+              onUpload={(f) => uploadImage('heroImageUrl', f)}
+              uploading={!!uploading['heroImageUrl']}
+              accept="image/*"
+              placeholder="Hero image URL"
+            />
+          </Field>
+          <Field label="Hero headline" full>
+            <input className="input" value={s.heroHeadline} onChange={(e) => set('heroHeadline', e.target.value)} />
+          </Field>
+          <Field label="Hero subheadline" full>
+            <input className="input" value={s.heroSubheadline} onChange={(e) => set('heroSubheadline', e.target.value)} />
+          </Field>
         </div>
       </Section>
 
@@ -229,6 +272,59 @@ export default function SettingsEditor({ initial }: { initial: Initial }) {
       </div>
 
       <style>{`.input{width:100%;border:1px solid #e2e8f0;border-radius:0.75rem;padding:0.5rem 0.75rem;font-size:0.875rem;background:white}`}</style>
+    </div>
+  );
+}
+
+function ImageUploadField({
+  value, onChange, onUpload, uploading, accept, placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onUpload: (f: File) => void;
+  uploading: boolean;
+  accept: string;
+  placeholder: string;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex gap-2">
+        <input
+          className="input flex-1"
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <button
+          type="button"
+          onClick={() => ref.current?.click()}
+          disabled={uploading}
+          className="shrink-0 px-3 py-1.5 rounded-xl border border-slate-200 text-sm hover:bg-slate-50 disabled:opacity-50 whitespace-nowrap"
+        >
+          {uploading ? 'Uploading…' : '↑ Upload'}
+        </button>
+        <input
+          ref={ref}
+          type="file"
+          accept={accept}
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) onUpload(file);
+            e.target.value = '';
+          }}
+        />
+      </div>
+      {value && (
+        <img
+          src={value}
+          alt="preview"
+          className="h-12 w-auto rounded-lg border border-slate-100 object-contain bg-slate-50"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
+      )}
     </div>
   );
 }
