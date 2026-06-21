@@ -61,7 +61,11 @@ export type Action =
   // Audit
   | 'audit.read'
   // Backup
-  | 'backup.run';
+  | 'backup.run'
+  // Payments
+  | 'payment.read'
+  | 'payment.create'
+  | 'payment.update';
 
 const PERMISSIONS: Record<Role, ReadonlySet<Action>> = {
   OWNER: new Set<Action>([
@@ -78,6 +82,7 @@ const PERMISSIONS: Record<Role, ReadonlySet<Action>> = {
     'media.read', 'media.upload',
     'audit.read',
     'backup.run',
+    'payment.read', 'payment.create', 'payment.update',
   ]),
   DOCTOR: new Set<Action>([
     // Read-most, edit consultations.
@@ -93,6 +98,7 @@ const PERMISSIONS: Record<Role, ReadonlySet<Action>> = {
     'review.read',
     'media.read', 'media.upload',
     'audit.read',
+    'payment.read', 'payment.create', 'payment.update',
   ]),
   STAFF: new Set<Action>([
     // Reception. Manage incoming requests + appointments. No consultation edits.
@@ -106,6 +112,7 @@ const PERMISSIONS: Record<Role, ReadonlySet<Action>> = {
     'card.transition.cancel',
     'review.read',
     'media.read',
+    'payment.read', 'payment.create', 'payment.update',
   ]),
 };
 

@@ -7,10 +7,13 @@
  * keep going" rather than failing the whole transaction.
  *
  * Templates required (register in Meta Business Manager):
- *   appointment_confirm_request    (with Quick Reply button → payload "CONFIRM_CARD_<publicId>")
- *   appointment_reminder_3d
- *   appointment_reminder_4h
- *   appointment_reminder_30m
+ *   appointment_confirm_request    params: [patient_name, doctor_name, slot_label, publicId]
+ *                                  (with Quick Reply button → payload "CONFIRM_CARD_<publicId>")
+ *   appointment_reminder_1d        params: [patient_name, doctor_name, slot_label]
+ *   appointment_reminder_12h       params: [patient_name, doctor_name, slot_label]
+ *   appointment_reminder_4h        params: [patient_name, doctor_name, slot_label]
+ *   payment_request                params: [patient_name, amount_str, doctor_name, payment_link]
+ *   payment_receipt                params: [patient_name, amount_str, bill_number]
  */
 import { prisma } from './db';
 import { env } from './env';

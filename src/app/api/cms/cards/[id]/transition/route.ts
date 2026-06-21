@@ -137,9 +137,9 @@ export const POST = handler<{ id: string }>(
       });
 
       const reminders: Array<{ minBefore: number; templateName: string }> = [
-        { minBefore: 3 * 24 * 60, templateName: 'appointment_reminder_3d' },
-        { minBefore: 4 * 60,      templateName: 'appointment_reminder_4h' },
-        { minBefore: 30,          templateName: 'appointment_reminder_30m' },
+        { minBefore: 24 * 60,  templateName: 'appointment_reminder_1d' },
+        { minBefore: 12 * 60,  templateName: 'appointment_reminder_12h' },
+        { minBefore: 4 * 60,   templateName: 'appointment_reminder_4h' },
       ];
       const now = Date.now();
       for (const r of reminders) {

@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ssrTenant } from '@/lib/ssr-tenant';
+import { env } from '@/lib/env';
 import RequestCardView from '@/components/cms/RequestCardView';
 import AppointmentCardView from '@/components/cms/AppointmentCardView';
 import ConsultationCardView from '@/components/cms/ConsultationCardView';
+import BillingPanel from '@/components/cms/BillingPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +30,10 @@ export default async function CardDetailPage({
     },
   });
   if (!card) notFound();
+
+  const existingPayment = card.type === 'consultation'
+    ? await tdb.payment.findFirst({ where: { cardId: id } })
+    : null;
 
   const otherCards = await tdb.card.findMany({
     where: { patientId: card.patientId, NOT: { id: card.id } },
@@ -101,6 +107,15 @@ export default async function CardDetailPage({
       </div>
 
       <aside className="space-y-4">
+        {card.type === 'consultation' && (
+          <BillingPanel
+            cardId={card.id}
+            patientId={card.patientId}
+            patientName={card.patient.name}
+            doctorName={card.doctor.name}
+            existingPayment={existingPayment as any}
+          />
+        )}
         <div className="bg-white border border-slate-100 rounded-2xl p-5">
           <h3 className="font-medium">Patient</h3>
           <div className="mt-2 text-sm">
