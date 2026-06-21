@@ -46,11 +46,64 @@ function LinkedInIcon() {
   );
 }
 
+// --- Service Card subcomponent (hooks must be at component top level) ---
+function ServiceCard({ svc, idx }: { svc: any; idx: number }) {
+  const { ref, visible } = useInView();
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 30 }}
+      animate={visible ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.6, delay: idx * 0.1 }}
+      key={svc.id}
+      className="group block"
+    >
+      <div className="aspect-[4/5] rounded-t-full rounded-b-full border border-[#D19B8E]/20 overflow-hidden relative mb-6">
+        <div className="absolute inset-0 bg-[#D19B8E]/5 group-hover:bg-[#D19B8E]/10 transition-colors flex flex-col items-center justify-center p-8 text-center">
+          <span className="text-4xl mb-6">{svc.icon || '✦'}</span>
+          <h4 className="text-2xl font-serif mb-4" style={{ fontFamily: "'Cormorant Garamond', serif" }}>{svc.name}</h4>
+          <p className="text-sm opacity-60 line-clamp-4">{svc.description}</p>
+        </div>
+      </div>
+      <div className="text-center">
+        <span className="text-xs uppercase tracking-widest text-[#D19B8E] group-hover:text-black transition-colors">
+          Learn More
+        </span>
+      </div>
+    </motion.div>
+  );
+}
+
+// --- Doctor Card subcomponent ---
+function DoctorCard({ doctor, idx }: { doctor: any; idx: number }) {
+  const { ref, visible } = useInView();
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 30 }}
+      animate={visible ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.6, delay: idx * 0.1 }}
+      className="text-center group"
+    >
+      <div className="w-48 h-48 mx-auto rounded-full overflow-hidden border border-[#D19B8E]/30 mb-5">
+        {doctor.photoUrl
+          ? <img src={doctor.photoUrl} alt={doctor.name} className="w-full h-full object-cover" />
+          : <div className="w-full h-full bg-[#D19B8E]/10 flex items-center justify-center text-4xl text-[#D19B8E]">✦</div>
+        }
+      </div>
+      <h4 className="text-xl font-serif mb-1" style={{ fontFamily: "'Cormorant Garamond', serif" }}>{doctor.name}</h4>
+      <p className="text-xs uppercase tracking-widest text-[#A89D99] mb-2">{doctor.specialties || doctor.qualifications}</p>
+      {doctor.bio && <p className="text-sm opacity-60 max-w-xs mx-auto line-clamp-3">{doctor.bio}</p>}
+    </motion.div>
+  );
+}
+
 // --- Menu Overlay Component ---
 function FullscreenMenu({ isOpen, close, snap }: { isOpen: boolean; close: () => void; snap: any }) {
   // Using the exact cubic-bezier from the user's CSS
   const transitionSettings = { duration: 0.4, ease: [0.76, 0, 0.24, 1], delay: 0.2 };
-  const clinicName = snap.settings.name || 'Likha Aesthetic Clinic';
+  const clinicName = snap?.settings?.clinicName || 'Likha Aesthetic Clinic';
+  const clinicSlug = snap?.clinic?.slug || '';
   
   return (
     <AnimatePresence>
@@ -131,7 +184,7 @@ function FullscreenMenu({ isOpen, close, snap }: { isOpen: boolean; close: () =>
                 <h4 className="text-[10px] font-bold tracking-[0.2em] text-[#A89D99] mb-8 uppercase">Let's Talk</h4>
                 <ul className="space-y-6 text-[14px] tracking-wide">
                   <li><a href="#enquiry" onClick={close} className="hover:text-[#D19B8E] transition-colors">Make an Enquiry</a></li>
-                  <li><a href={`/c/${snap.slug}/book`} className="hover:text-[#D19B8E] transition-colors">Book Appointment</a></li>
+                  <li><a href={`/c/${clinicSlug}/book`} className="hover:text-[#D19B8E] transition-colors">Book Appointment</a></li>
                   <li><a href="#about" onClick={close} className="hover:text-[#D19B8E] transition-colors">About {clinicName}</a></li>
                 </ul>
               </div>
@@ -179,7 +232,7 @@ function FullscreenMenu({ isOpen, close, snap }: { isOpen: boolean; close: () =>
 /* ─── Main Template ────────────────────────────────────────────────── */
 export default function TemplateLikha({ snap }: { snap: any }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  
+
   // Google Fonts for elegant serif and sans-serif
   useEffect(() => {
     const link = document.createElement('link');
@@ -189,10 +242,12 @@ export default function TemplateLikha({ snap }: { snap: any }) {
     return () => { document.head.removeChild(link); };
   }, []);
 
-  const hero = snap.hero || {};
-  const about = snap.about || {};
   const settings = snap.settings || {};
-  const clinicName = settings.clinicName || settings.name || 'Likha Aesthetic';
+  const clinicName = settings.clinicName || 'Likha Aesthetic';
+  const clinicSlug = snap.clinic?.slug || '';
+  const heroImageUrl = settings.heroImageUrl || 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=1470&auto=format&fit=crop';
+  const heroHeadline = settings.heroHeadline || 'Enhancing Your Natural Beauty';
+  const heroSubheadline = settings.heroSubheadline || 'Award winning non-surgical beauty treatments delivered by medical professionals.';
   const services = Array.isArray(snap.services) && snap.services.length > 0
     ? snap.services
     : [
@@ -200,6 +255,7 @@ export default function TemplateLikha({ snap }: { snap: any }) {
         { id: 2, icon: '✨', name: 'Anti-Ageing', description: 'Cutting-edge procedures that turn back the clock without invasive surgery.' },
         { id: 3, icon: '🌸', name: 'Body Contouring', description: 'Sculpt and define your silhouette with our state-of-the-art body treatments.' },
       ];
+  const doctors: any[] = snap.doctors ?? [];
 
   return (
     <div 
@@ -237,8 +293,8 @@ export default function TemplateLikha({ snap }: { snap: any }) {
         </div>
 
         {/* Right: Book Now */}
-        <a 
-          href={`/c/${snap.slug}/book`}
+        <a
+          href={`/c/${clinicSlug}/book`}
           className="text-xs uppercase tracking-[0.1em] border border-white/20 px-6 py-3 rounded-full hover:bg-white hover:text-black transition-colors"
         >
           Book Now
@@ -257,12 +313,12 @@ export default function TemplateLikha({ snap }: { snap: any }) {
             className="relative z-10 md:pl-20"
           >
             <h2 className="text-5xl md:text-8xl font-serif leading-[1.1] mb-8" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
-              {hero.headline || 'Enhancing Your Natural Beauty'}
+              {heroHeadline}
             </h2>
             <p className="text-lg md:text-xl opacity-80 max-w-md font-light leading-relaxed mb-12">
-              {hero.subheadline || 'Award winning non-surgical beauty treatments delivered by medical professionals.'}
+              {heroSubheadline}
             </p>
-            <a 
+            <a
               href="#treatments"
               className="group flex items-center gap-4 text-sm uppercase tracking-widest font-medium"
             >
@@ -279,9 +335,9 @@ export default function TemplateLikha({ snap }: { snap: any }) {
             transition={{ duration: 1, ease: [0.15, 0.9, 0.34, 0.95], delay: 0.4 }}
             className="relative h-[60vh] md:h-[85vh] w-full max-w-[600px] mx-auto rounded-t-full overflow-hidden border border-[#D19B8E]/30"
           >
-            <img 
-              src={snap.about.imageUrl || 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=1470&auto=format&fit=crop'} 
-              alt="Clinic" 
+            <img
+              src={heroImageUrl}
+              alt="Clinic"
               className="absolute inset-0 w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-[#D19B8E]/10 mix-blend-overlay"></div>
@@ -293,43 +349,43 @@ export default function TemplateLikha({ snap }: { snap: any }) {
       <section id="treatments" className="py-32 px-4 md:px-20 border-t border-[#D19B8E]/20">
         <div className="max-w-[1400px] mx-auto">
           <h3 className="text-[10px] font-bold tracking-[0.2em] text-[#A89D99] mb-12 uppercase">Our Treatments</h3>
-          
           <div className="grid md:grid-cols-3 gap-8">
-            {snap.services.map((svc: any, idx: number) => {
-              const { ref, visible } = useInView();
-              return (
-                <motion.div 
-                  ref={ref}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={visible ? { opacity: 1, y: 0 } : {}}
-                  transition={{ duration: 0.6, delay: idx * 0.1 }}
-                  key={svc.id}
-                  className="group block"
-                >
-                  <div className="aspect-[4/5] rounded-t-full rounded-b-full border border-[#D19B8E]/20 overflow-hidden relative mb-6">
-                    <div className="absolute inset-0 bg-[#D19B8E]/5 group-hover:bg-[#D19B8E]/10 transition-colors flex flex-col items-center justify-center p-8 text-center">
-                      <span className="text-4xl mb-6">{svc.icon}</span>
-                      <h4 className="text-2xl font-serif mb-4" style={{ fontFamily: "'Cormorant Garamond', serif" }}>{svc.name}</h4>
-                      <p className="text-sm opacity-60 line-clamp-4">{svc.description}</p>
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <span className="text-xs uppercase tracking-widest text-[#D19B8E] group-hover:text-black transition-colors">
-                      Learn More
-                    </span>
-                  </div>
-                </motion.div>
-              );
-            })}
+            {services.map((svc: any, idx: number) => (
+              <ServiceCard key={svc.id ?? idx} svc={svc} idx={idx} />
+            ))}
           </div>
         </div>
       </section>
 
-      {/* --- Footer (Minimalist) --- */}
-      <footer className="py-12 border-t border-[#D19B8E]/20 text-center">
-        <p className="text-xs tracking-widest opacity-60 uppercase">
-          © {new Date().getFullYear()} {clinicName}. All rights reserved.
-        </p>
+      {/* --- Doctors --- */}
+      {doctors.length > 0 && (
+        <section id="doctors" className="py-32 px-4 md:px-20 border-t border-[#D19B8E]/20">
+          <div className="max-w-[1400px] mx-auto">
+            <h3 className="text-[10px] font-bold tracking-[0.2em] text-[#A89D99] mb-4 uppercase">Our Specialists</h3>
+            <h2 className="text-4xl md:text-6xl font-serif mb-16 leading-tight" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+              Meet the team
+            </h2>
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
+              {doctors.map((doctor: any, idx: number) => (
+                <DoctorCard key={doctor.id} doctor={doctor} idx={idx} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* --- Footer --- */}
+      <footer className="py-12 border-t border-[#D19B8E]/20">
+        <div className="max-w-[1400px] mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-xs tracking-widest opacity-60 uppercase">
+            © {new Date().getFullYear()} {clinicName}. All rights reserved.
+          </p>
+          <div className="flex gap-6 text-xs opacity-60 uppercase tracking-widest">
+            {settings.phone && <a href={`tel:${settings.phone}`} className="hover:text-[#D19B8E] transition-colors">{settings.phone}</a>}
+            {settings.email && <a href={`mailto:${settings.email}`} className="hover:text-[#D19B8E] transition-colors">{settings.email}</a>}
+            <a href={`/c/${clinicSlug}/book`} className="text-[#D19B8E]">Book Now</a>
+          </div>
+        </div>
       </footer>
     </div>
   );
