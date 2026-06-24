@@ -6,7 +6,10 @@ import { log } from './log';
 
 const TOKEN_TTL_HOURS = 24;
 
-export async function createAndSendVerificationEmail(userId: number): Promise<void> {
+export async function createAndSendVerificationEmail(
+  userId: number,
+  requestOrigin?: string
+): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: { clinic: true },
@@ -19,16 +22,20 @@ export async function createAndSendVerificationEmail(userId: number): Promise<vo
 
   await prisma.emailVerificationToken.create({ data: { userId, tokenHash, expiresAt } });
 
-  const r = await sendVerificationEmail({ user, rawToken });
+  const r = await sendVerificationEmail({ user, rawToken, requestOrigin });
   if (!r.ok) log.error('email_verification.send_failed', { userId, err: r.error });
 }
 
 export async function sendVerificationEmail(opts: {
   user: { id: number; name: string; email: string; clinic: { name: string } };
   rawToken: string;
+  requestOrigin?: string;
 }): Promise<{ ok: boolean; error?: string }> {
-  const { user, rawToken } = opts;
-  const link = `${env.APP_URL.replace(/\/$/, '')}/api/public/verify-email?token=${rawToken}`;
+  const { user, rawToken, requestOrigin } = opts;
+  // Prefer the actual request origin over APP_URL — APP_URL may be misconfigured
+  // to a custom domain that doesn't have DNS set up yet.
+  const base = (requestOrigin ?? env.APP_URL).replace(/\/$/, '');
+  const link = `${base}/api/public/verify-email?token=${rawToken}`;
   const subj = `Verify your email — ${user.clinic.name}`;
   const html = `
     <p>Hi ${user.name},</p>

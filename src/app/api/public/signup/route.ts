@@ -117,8 +117,11 @@ export async function POST(req: NextRequest) {
 
     log.info('signup.clinic_created', { clinicId: clinic.id, slug: clinic.slug });
 
-    // Fire-and-forget — don't block signup if email fails
-    createAndSendVerificationEmail(userId).catch(() => {});
+    // Fire-and-forget — don't block signup if email fails.
+    // Pass the request origin so the verify link goes to the server the user
+    // just reached, not APP_URL which may be misconfigured to a custom domain.
+    const origin = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+    createAndSendVerificationEmail(userId, origin).catch(() => {});
 
     return { ok: true as const, clinicSlug: clinic.slug };
   });
