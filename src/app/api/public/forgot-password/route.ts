@@ -34,7 +34,9 @@ export async function POST(req: NextRequest) {
     data: { userId: user.id, tokenHash, expiresAt },
   });
 
-  const origin = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+  const proto = req.headers.get('x-forwarded-proto') ?? 'https';
+  const host = req.headers.get('host') ?? req.nextUrl.host;
+  const origin = `${proto}://${host}`;
   const link = `${origin}/reset-password?token=${rawToken}`;
   const subj = `Reset your password — ${user.clinic.name}`;
   const html = `

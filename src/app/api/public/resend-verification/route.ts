@@ -26,7 +26,9 @@ export async function POST(req: NextRequest) {
   const expiresAt = new Date(Date.now() + 24 * 60 * 60_000);
 
   await prisma.emailVerificationToken.create({ data: { userId: user.id, tokenHash, expiresAt } });
-  const origin = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+  const proto = req.headers.get('x-forwarded-proto') ?? 'https';
+  const host = req.headers.get('host') ?? req.nextUrl.host;
+  const origin = `${proto}://${host}`;
   const r = await sendVerificationEmail({ user, rawToken, requestOrigin: origin });
   if (!r.ok) log.error('resend_verification.email_failed', { userId: user.id });
 

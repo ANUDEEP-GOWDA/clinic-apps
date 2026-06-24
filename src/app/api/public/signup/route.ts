@@ -120,7 +120,9 @@ export async function POST(req: NextRequest) {
     // Fire-and-forget — don't block signup if email fails.
     // Pass the request origin so the verify link goes to the server the user
     // just reached, not APP_URL which may be misconfigured to a custom domain.
-    const origin = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+    const proto = req.headers.get('x-forwarded-proto') ?? 'https';
+    const host = req.headers.get('host') ?? req.nextUrl.host;
+    const origin = `${proto}://${host}`;
     createAndSendVerificationEmail(userId, origin).catch(() => {});
 
     return { ok: true as const, clinicSlug: clinic.slug };
