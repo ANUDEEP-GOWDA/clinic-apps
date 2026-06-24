@@ -421,9 +421,10 @@ model Media {
   clinicId   Int
   clinic     Clinic   @relation(fields: [clinicId], references: [id])
   filename   String
-  storageKey String
+  storageKey String   @default("")
   mimeType   String
   sizeBytes  Int
+  bytes      Bytes?
   uploadedBy Int?
   altText    String   @default("")
   createdAt  DateTime @default(now())

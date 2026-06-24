@@ -34,6 +34,7 @@ const ALLOWED_API_PREFIXES = [
   '/api/public/slots',
   '/api/public/booking',
   '/api/public/call-request',
+  '/api/media/',
 ];
 
 // Public page paths that get rewritten to /c/[slug]/...
