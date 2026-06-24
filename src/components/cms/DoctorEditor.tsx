@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
+import ImageUploadField from '@/components/cms/ImageUploadField';
 
 type Doctor = {
   id?: number;
@@ -121,11 +122,11 @@ export default function DoctorEditor({
                 onChange={(e) => update('slug', e.target.value)}
               />
             </Field>
-            <Field label="Photo URL">
-              <input
-                className="input"
+            <Field label="Photo">
+              <ImageUploadField
                 value={d.photoUrl}
-                onChange={(e) => update('photoUrl', e.target.value)}
+                onChange={(v) => update('photoUrl', v)}
+                placeholder="Photo URL"
               />
             </Field>
             <Field label="Specialties (comma-separated)">

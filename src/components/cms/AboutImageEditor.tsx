@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import ImageUploadField from '@/components/cms/ImageUploadField';
 
 export default function AboutImageEditor({ initial }: { initial: string }) {
   const router = useRouter();
@@ -27,11 +28,10 @@ export default function AboutImageEditor({ initial }: { initial: string }) {
 
   return (
     <div className="max-w-2xl space-y-2">
-      <h2 className="font-medium">About image URL</h2>
-      <input
-        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"
+      <h2 className="font-medium">About image</h2>
+      <ImageUploadField
         value={v}
-        onChange={(e) => setV(e.target.value)}
+        onChange={setV}
         placeholder="https://… or /uploads/…"
       />
       <div className="flex items-center gap-3">
