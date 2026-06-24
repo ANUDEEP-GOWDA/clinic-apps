@@ -82,11 +82,15 @@ function VerifyEmailContent() {
             d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
       </div>
-      <h1 className="text-xl font-semibold text-slate-900">Check your inbox</h1>
+      <h1 className="text-xl font-semibold text-slate-900">Account created!</h1>
       <p className="mt-2 text-sm text-slate-500">
-        We sent a verification link to your email address. Click it to confirm your account.
+        We sent a verification link to your email. You can verify later — you&apos;re ready to sign in now.
       </p>
-      <p className="mt-4 text-xs text-slate-400">Didn&apos;t get it? Check spam, or:</p>
+      <Link href="/cms/login"
+        className="mt-5 inline-block w-full px-4 py-2.5 rounded-2xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800">
+        Sign in to your dashboard
+      </Link>
+      <p className="mt-5 text-xs text-slate-400">Didn&apos;t get the email? Check spam, or resend:</p>
       {sent ? (
         <p className="mt-2 text-sm text-green-600 font-medium">Resent! Check your inbox again.</p>
       ) : (
@@ -95,16 +99,11 @@ function VerifyEmailContent() {
             placeholder="your@email.com" required
             className="rounded-xl border border-slate-200 px-3 py-2 text-sm w-56" />
           <button type="submit" disabled={busy}
-            className="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm disabled:opacity-50">
+            className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm disabled:opacity-50 hover:bg-slate-200">
             {busy ? '…' : 'Resend'}
           </button>
         </form>
       )}
-      <div className="mt-6">
-        <Link href="/cms/login" className="text-sm text-slate-500 underline">
-          Already verified? Sign in
-        </Link>
-      </div>
     </div>
   );
 }
