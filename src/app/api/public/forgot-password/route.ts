@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'node:crypto';
 import { prisma } from '@/lib/db';
 import { sendEmail } from '@/lib/email';
-import { env } from '@/lib/env';
 import { check, clientKey } from '@/lib/rate-limit';
 import { log } from '@/lib/log';
 
@@ -35,7 +34,8 @@ export async function POST(req: NextRequest) {
     data: { userId: user.id, tokenHash, expiresAt },
   });
 
-  const link = `${env.APP_URL.replace(/\/$/, '')}/reset-password?token=${rawToken}`;
+  const origin = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+  const link = `${origin}/reset-password?token=${rawToken}`;
   const subj = `Reset your password — ${user.clinic.name}`;
   const html = `
     <p>Hi ${user.name},</p>
