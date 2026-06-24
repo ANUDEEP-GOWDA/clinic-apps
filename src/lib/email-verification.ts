@@ -20,7 +20,15 @@ export async function createAndSendVerificationEmail(
   const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
   const expiresAt = new Date(Date.now() + TOKEN_TTL_HOURS * 60 * 60_000);
 
-  await prisma.emailVerificationToken.create({ data: { userId, tokenHash, expiresAt } });
+  try {
+    await prisma.emailVerificationToken.create({ data: { userId, tokenHash, expiresAt } });
+  } catch (err: unknown) {
+    log.error('email_verification.token_create_failed', {
+      userId,
+      err: err instanceof Error ? err.message : String(err),
+    });
+    return;
+  }
 
   const r = await sendVerificationEmail({ user, rawToken, requestOrigin });
   if (!r.ok) log.error('email_verification.send_failed', { userId, err: r.error });

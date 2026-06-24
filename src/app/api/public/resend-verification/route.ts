@@ -25,12 +25,21 @@ export async function POST(req: NextRequest) {
   const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
   const expiresAt = new Date(Date.now() + 24 * 60 * 60_000);
 
-  await prisma.emailVerificationToken.create({ data: { userId: user.id, tokenHash, expiresAt } });
+  try {
+    await prisma.emailVerificationToken.create({ data: { userId: user.id, tokenHash, expiresAt } });
+  } catch (err: unknown) {
+    log.error('resend_verification.token_create_failed', {
+      userId: user.id,
+      err: err instanceof Error ? err.message : String(err),
+    });
+    return NextResponse.json({ ok: true });
+  }
+
   const proto = req.headers.get('x-forwarded-proto') ?? 'https';
   const host = req.headers.get('host') ?? req.nextUrl.host;
   const origin = `${proto}://${host}`;
   const r = await sendVerificationEmail({ user, rawToken, requestOrigin: origin });
-  if (!r.ok) log.error('resend_verification.email_failed', { userId: user.id });
+  if (!r.ok) log.error('resend_verification.email_failed', { userId: user.id, err: r.error });
 
   return NextResponse.json({ ok: true });
 }
