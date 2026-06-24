@@ -15,6 +15,7 @@ import { parseWorkingHours, toOpeningHoursSpec } from './working-hours';
 import { env } from './env';
 
 function siteUrl(snap: PublicSnapshot): string {
+  if (snap.clinic.customDomain) return `https://${snap.clinic.customDomain}`;
   const base = env.APP_URL.replace(/\/$/, '');
   return `${base}/c/${snap.clinic.slug}`;
 }

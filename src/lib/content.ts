@@ -13,7 +13,7 @@ import { prisma } from './db';
 import { getClinicBySlug } from './tenant';
 
 export type PublicSnapshot = {
-  clinic: { id: number; slug: string; name: string };
+  clinic: { id: number; slug: string; name: string; customDomain: string | null };
   settings: {
     clinicName: string;
     tagline: string;
@@ -117,7 +117,7 @@ export async function getPublicSnapshot(clinicSlug: string): Promise<PublicSnaps
   for (const row of siteContent) sc[row.key] = row.value;
 
   return {
-    clinic: { id: clinic.id, slug: clinic.slug, name: clinic.name },
+    clinic: { id: clinic.id, slug: clinic.slug, name: clinic.name, customDomain: clinic.customDomain ?? null },
     settings: settings
       ? {
           clinicName: settings.clinicName,
