@@ -57,7 +57,7 @@ export default function SignupForm() {
         setError(ERROR_MESSAGES[j.error ?? ''] ?? j.error ?? 'Something went wrong.');
         return;
       }
-      router.push('/verify-email');
+      router.push('/cms/login?from=signup');
     } catch {
       setError('Network error. Please try again.');
     } finally {

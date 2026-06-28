@@ -16,6 +16,7 @@ function LoginForm() {
   const router = useRouter();
   const search = useSearchParams();
   const next = search.get('next') || '/cms/dashboard';
+  const fromSignup = search.get('from') === 'signup';
 
   const [step, setStep] = useState<'password' | 'mfa'>('password');
   const [email, setEmail] = useState('');
@@ -122,6 +123,11 @@ function LoginForm() {
     <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <form onSubmit={submitPassword}
         className="w-full max-w-sm bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        {fromSignup && (
+          <div className="mb-4 rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
+            Account created! Sign in to get started.
+          </div>
+        )}
         <h1 className="text-xl font-semibold">Sign in</h1>
         <p className="text-sm text-slate-500 mt-1">Sign in to manage your clinic.</p>
         <div className="mt-6 space-y-3">
